@@ -3,17 +3,13 @@ const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' 
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: { rejectUnauthorized: false },
   max: 5,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
 });
 
 pool.connect()
-  .then(c => { console.log('✅ Conexión a PostgreSQL/Supabase establecida'); c.release(); })
-  .catch(err => console.error('❌ Error BD:', err.message));
+  .then(c => { console.log('✅ PostgreSQL OK'); c.release(); })
+  .catch(err => console.error('❌ Error:', err.message));
 
 const db = {
   query: async (sql, params = []) => {
