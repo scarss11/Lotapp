@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — LotesApp</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
+</head>
+<body>
+<div class="app-layout">
+  <button class="sidebar-toggle" id="sidebarToggle"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div><div class="sidebar-brand-text">LotesApp</div><div class="sidebar-brand-sub">Panel Admin</div></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Administración</div>
+      <ul class="sidebar-nav">
+        <li><a href="#tab-dashboard" class="tab-link active" data-tab="dashboard"><div class="nav-icon icon-blue"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>Dashboard</a></li>
+        <li><a href="#tab-proyectos" class="tab-link" data-tab="proyectos"><div class="nav-icon icon-teal"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>Proyectos</a></li>
+        <li><a href="#tab-lotes" class="tab-link" data-tab="lotes"><div class="nav-icon icon-green"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>Lotes</a></li>
+        <li><a href="#tab-pagos" class="tab-link" data-tab="pagos"><div class="nav-icon icon-orange"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>Pagos</a></li>
+        <li><a href="#tab-pqrs" class="tab-link" data-tab="pqrs"><div class="nav-icon icon-purple"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>PQRS</a></li>
+        <li><a href="#tab-usuarios" class="tab-link" data-tab="usuarios"><div class="nav-icon" style="background:rgba(255,149,0,.1);"><svg viewBox="0 0 24 24" stroke-width="1.8" style="width:18px;height:18px;stroke:#FF9500;fill:none;"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>Usuarios</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section"><ul class="sidebar-nav">
+      <li><a href="#" onclick="logout();return false;" style="color:var(--red);"><div class="nav-icon icon-red"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>Cerrar Sesión</a></li>
+    </ul></div>
+  </aside>
+
+  <main class="main-content">
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content">
+      <div class="page-header"><h1>Dashboard Admin</h1><p>Resumen general de la plataforma</p></div>
+      <div class="dash-grid" id="adminStats">
+        <div class="dash-card"><div class="dash-icon blue"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div><div><div class="dash-val" id="sTotal">—</div><div class="dash-lbl">Total Lotes</div></div></div>
+        <div class="dash-card"><div class="dash-icon green"><svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div><div class="dash-val" id="sDisp">—</div><div class="dash-lbl">Disponibles</div></div></div>
+        <div class="dash-card"><div class="dash-icon orange"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div><div><div class="dash-val" id="sVend">—</div><div class="dash-lbl">Vendidos</div></div></div>
+        <div class="dash-card"><div class="dash-icon purple"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="dash-val" id="sClientes">—</div><div class="dash-lbl">Clientes</div></div></div>
+      </div>
+    </div>
+
+    <!-- PROYECTOS -->
+    <div id="tab-proyectos" class="tab-content" style="display:none;">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div><h1>Proyectos</h1><p>Gestión de proyectos inmobiliarios</p></div>
+        <button class="btn btn-primary" onclick="openModal('modalProyecto')">+ Nuevo Proyecto</button>
+      </div>
+      <div id="proyectosAdminList"><p style="color:var(--sub);">Cargando...</p></div>
+    </div>
+
+    <!-- LOTES -->
+    <div id="tab-lotes" class="tab-content" style="display:none;">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div><h1>Lotes</h1><p>Gestión del catálogo de lotes</p></div>
+        <button class="btn btn-primary" onclick="openModal('modalLote')">+ Nuevo Lote</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Código</th><th>Proyecto · Inmobiliaria</th><th>Área</th><th>Precio</th><th>Estado</th><th>Imagen</th><th>Acciones</th></tr></thead>
+          <tbody id="lotesAdminTable"><tr><td colspan="7" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGOS -->
+    <div id="tab-pagos" class="tab-content" style="display:none;">
+      <div class="page-header"><h1>Pagos</h1><p>Gestión y aprobación de pagos</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Lote</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="pagosAdminTable"><tr><td colspan="7" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PQRS -->
+    <div id="tab-pqrs" class="tab-content" style="display:none;">
+      <div class="page-header"><h1>PQRS</h1><p>Gestión de solicitudes de clientes</p></div>
+      <div id="pqrsAdminList"><p style="color:var(--sub);">Cargando...</p></div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div id="tab-usuarios" class="tab-content" style="display:none;">
+      <div class="page-header"><h1>Usuarios</h1><p>Clientes registrados en la plataforma</p></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nombre</th><th>Email</th><th>Cédula</th><th>Teléfono</th><th>Rol</th><th>Registro</th></tr></thead>
+          <tbody id="usuariosTable"><tr><td colspan="6" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Nuevo Proyecto -->
+<div class="modal-overlay" id="modalProyecto">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header"><h3>Nuevo Proyecto</h3><button class="modal-close" onclick="closeModal('modalProyecto')">×</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group" style="grid-column:1/-1;"><label>Nombre del proyecto *</label><input type="text" id="pNombre" placeholder="Ej: Portal del Sol"></div>
+      <div class="form-group"><label>Inmobiliaria *</label><input type="text" id="pInmobiliaria" placeholder="Ej: Inciti S.A.S"></div>
+      <div class="form-group"><label>Ubicación</label><input type="text" id="pUbicacion" placeholder="Ciudad, Departamento"></div>
+      <div class="form-group"><label>Área total (m²)</label><input type="number" id="pArea" placeholder="50000"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Descripción</label><textarea id="pDesc" rows="3" placeholder="Descripción del proyecto..."></textarea></div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Imágenes del proyecto (máx. 6)</label>
+        <div class="img-upload-area" onclick="document.getElementById('pImagenes').click()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p style="color:var(--sub);font-size:14px;">Click para subir imágenes</p>
+        </div>
+        <input type="file" id="pImagenes" multiple accept="image/*" style="display:none;" onchange="previewImages(this,'pPreview')">
+        <div class="img-preview" id="pPreview"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalProyecto')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarProyecto">Crear Proyecto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Lote -->
+<div class="modal-overlay" id="modalLote">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header"><h3>Nuevo Lote</h3><button class="modal-close" onclick="closeModal('modalLote')">×</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group"><label>Código *</label><input type="text" id="lCodigo" placeholder="Ej: A-01"></div>
+      <div class="form-group"><label>Etapa *</label><select id="lEtapa"><option value="">Cargando...</option></select></div>
+      <div class="form-group"><label>Área (m²) *</label><input type="number" id="lArea" placeholder="120"></div>
+      <div class="form-group"><label>Precio ($) *</label><input type="number" id="lPrecio" placeholder="85000000"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Ubicación</label><input type="text" id="lUbicacion" placeholder="Manzana B, Lote 3"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Descripción</label><textarea id="lDesc" rows="2" placeholder="Descripción del lote..."></textarea></div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Imagen del lote</label>
+        <div class="img-upload-area" onclick="document.getElementById('lImagen').click()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p style="color:var(--sub);font-size:14px;">Click para subir imagen</p>
+        </div>
+        <input type="file" id="lImagen" accept="image/*" style="display:none;" onchange="previewImages(this,'lPreview',1)">
+        <div class="img-preview" id="lPreview"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalLote')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarLote">Crear Lote</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Responder PQRS -->
+<div class="modal-overlay" id="modalResponder">
+  <div class="modal"><div class="modal-header"><h3>Responder PQRS</h3><button class="modal-close" onclick="closeModal('modalResponder')">×</button></div>
+    <div id="pqrsDetalleAdmin" style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:16px;font-size:14px;"></div>
+    <div class="form-group"><label>Respuesta</label><textarea id="respuestaTexto" rows="4" placeholder="Escribe la respuesta..."></textarea></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('modalResponder')">Cancelar</button>
+      <button class="btn btn-primary" id="btnEnviarRespuesta">Enviar Respuesta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Asignar Lote -->
+<div class="modal-overlay" id="modalAsignar">
+  <div class="modal"><div class="modal-header"><h3>Asignar Lote a Cliente</h3><button class="modal-close" onclick="closeModal('modalAsignar')">×</button></div>
+    <div class="form-group"><label>Lote</label><select id="asigLote"></select></div>
+    <div class="form-group"><label>Cliente</label><select id="asigCliente"></select></div>
+    <div class="form-group"><label>Cuotas acordadas</label><input type="number" id="asigCuotas" value="12" min="1"></div>
+    <div class="form-group"><label>Fecha inicio</label><input type="date" id="asigFecha"></div>
+    <div class="form-group"><label>Notas</label><textarea id="asigNotas" rows="2"></textarea></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('modalAsignar')">Cancelar</button>
+      <button class="btn btn-primary" id="btnAsignar">Asignar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="../js/app.js"></script>
+<script>
+let currentPqrsId=null;
+
+(async()=>{
+  const u=await checkSession('admin');
+  if(!u){window.location.replace('/login');return;}
+  loadStats(); loadProyectosAdmin(); loadLotesAdmin(); loadPagosAdmin(); loadPqrsAdmin(); loadUsuarios();
+  loadEtapasSelect();
+})();
+
+// ─── Tabs ─────────────────────────────────────────────────
+document.querySelectorAll('.tab-link').forEach(link=>{
+  link.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelectorAll('.tab-link').forEach(l=>l.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
+    link.classList.add('active');
+    document.getElementById('tab-'+link.dataset.tab).style.display='block';
+  });
+});
+
+// ─── Image preview ────────────────────────────────────────
+function previewImages(input,previewId,maxFiles=6){
+  const prev=document.getElementById(previewId); prev.innerHTML='';
+  const files=Array.from(input.files).slice(0,maxFiles);
+  files.forEach(f=>{const r=new FileReader();r.onload=e=>{const img=document.createElement('img');img.src=e.target.result;prev.appendChild(img);};r.readAsDataURL(f);});
+}
+
+// ─── Stats ────────────────────────────────────────────────
+async function loadStats(){
+  const d=await api('/api/proyecto/estadisticas');
+  if(!d.success)return;
+  document.getElementById('sTotal').textContent=d.stats.total_lotes;
+  document.getElementById('sDisp').textContent=d.stats.disponibles;
+  document.getElementById('sVend').textContent=d.stats.vendidos;
+  document.getElementById('sClientes').textContent=d.stats.total_clientes;
+}
+
+// ─── Proyectos ────────────────────────────────────────────
+async function loadProyectosAdmin(){
+  const d=await api('/api/proyecto');
+  const c=document.getElementById('proyectosAdminList');
+  if(!d.success||!d.proyectos.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin proyectos. Crea el primero.</p></div>';return;}
+  c.innerHTML=d.proyectos.map(p=>{
+    let gal=[];try{gal=JSON.parse(p.galeria||'[]');}catch(_){}
+    const etps=d.etapas.filter(e=>e.proyecto_id===p.id);
+    return `<div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+        ${gal[0]?`<img src="${gal[0]}" style="width:120px;height:90px;object-fit:cover;border-radius:10px;flex-shrink:0;">`:''}
+        <div style="flex:1;min-width:200px;">
+          <h3 style="font-size:1.1rem;">${p.nombre}</h3>
+          ${p.inmobiliaria?`<p style="color:var(--blue);font-size:13px;font-weight:700;">🏢 ${p.inmobiliaria}</p>`:''}
+          ${p.ubicacion?`<p style="color:var(--sub);font-size:13px;">📍 ${p.ubicacion}</p>`:''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            ${etps.map(e=>`${estadoBadge(e.estado)} <span style="font-size:12px;">${e.nombre}</span>`).join(' · ')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btnGuardarProyecto').addEventListener('click',async()=>{
+  const nombre=document.getElementById('pNombre').value.trim();
+  const inmobiliaria=document.getElementById('pInmobiliaria').value.trim();
+  if(!nombre||!inmobiliaria){showToast('Nombre e inmobiliaria son obligatorios','warning');return;}
+  const fd=new FormData();
+  fd.append('nombre',nombre); fd.append('inmobiliaria',inmobiliaria);
+  fd.append('descripcion',document.getElementById('pDesc').value);
+  fd.append('ubicacion',document.getElementById('pUbicacion').value);
+  fd.append('area_total',document.getElementById('pArea').value);
+  const imgs=document.getElementById('pImagenes').files;
+  for(let i=0;i<imgs.length;i++) fd.append('imagenes',imgs[i]);
+  const d=await api('/api/proyecto','POST',fd,true);
+  if(d.success){showToast('Proyecto creado','success');closeModal('modalProyecto');loadProyectosAdmin();loadEtapasSelect();}
+  else showToast(d.message||'Error','error');
+});
+
+// ─── Lotes ────────────────────────────────────────────────
+async function loadLotesAdmin(){
+  const d=await api('/api/lotes');
+  const tb=document.getElementById('lotesAdminTable');
+  if(!d.success||!d.lotes.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin lotes</td></tr>';return;}
+  tb.innerHTML=d.lotes.map(l=>`<tr>
+    <td><strong>${l.codigo}</strong></td>
+    <td style="font-size:13px;">${l.proyecto_nombre||'—'}${l.proyecto_inmobiliaria?` <span style="color:var(--sub);">· ${l.proyecto_inmobiliaria}</span>`:''}</td>
+    <td>${l.area_m2} m²</td>
+    <td>${formatCOP(l.precio)}</td>
+    <td>${estadoBadge(l.estado)}</td>
+    <td>${l.imagen_url?`<img src="${l.imagen_url}" style="width:48px;height:36px;object-fit:cover;border-radius:6px;">`:'—'}</td>
+    <td><button class="btn btn-sm btn-primary" onclick="abrirAsignar(${l.id},'${l.codigo}')">Asignar</button></td>
+  </tr>`).join('');
+}
+
+async function loadEtapasSelect(){
+  const d=await api('/api/proyecto');
+  const sel=document.getElementById('lEtapa');
+  if(!d.success){sel.innerHTML='<option value="">Sin proyectos</option>';return;}
+  sel.innerHTML='<option value="">Seleccionar etapa...</option>'+d.etapas.map(e=>{
+    const p=d.proyectos.find(x=>x.id===e.proyecto_id);
+    return `<option value="${e.id}">${p?p.nombre+' → ':''} ${e.nombre}</option>`;
+  }).join('');
+}
+
+document.getElementById('btnGuardarLote').addEventListener('click',async()=>{
+  const fd=new FormData();
+  fd.append('codigo',document.getElementById('lCodigo').value);
+  fd.append('etapa_id',document.getElementById('lEtapa').value);
+  fd.append('area_m2',document.getElementById('lArea').value);
+  fd.append('precio',document.getElementById('lPrecio').value);
+  fd.append('ubicacion',document.getElementById('lUbicacion').value);
+  fd.append('descripcion',document.getElementById('lDesc').value);
+  const img=document.getElementById('lImagen').files[0];
+  if(img) fd.append('imagen',img);
+  const d=await api('/api/lotes','POST',fd,true);
+  if(d.success){showToast('Lote creado correctamente','success');closeModal('modalLote');loadLotesAdmin();}
+  else showToast(d.message||'Error creando lote','error');
+});
+
+// ─── Asignar lote ─────────────────────────────────────────
+async function abrirAsignar(loteId,loteCod){
+  const du=await api('/api/proyecto/usuarios');
+  const selL=document.getElementById('asigLote');
+  const selC=document.getElementById('asigCliente');
+  selL.innerHTML=`<option value="${loteId}">${loteCod}</option>`;
+  selC.innerHTML=du.success?du.usuarios.filter(u=>u.rol==='cliente').map(u=>`<option value="${u.id}">${u.nombre} ${u.apellido}</option>`).join(''):'<option>Sin clientes</option>';
+  document.getElementById('asigFecha').value=new Date().toISOString().slice(0,10);
+  openModal('modalAsignar');
+}
+document.getElementById('btnAsignar').addEventListener('click',async()=>{
+  const d=await api('/api/pagos/compra','POST',{
+    lote_id:document.getElementById('asigLote').value,
+    usuario_id:document.getElementById('asigCliente').value,
+    cuotas_acordadas:document.getElementById('asigCuotas').value,
+    fecha_inicio:document.getElementById('asigFecha').value,
+    notas:document.getElementById('asigNotas').value
+  });
+  if(d.success){showToast('Lote asignado al cliente','success');closeModal('modalAsignar');loadLotesAdmin();}
+  else showToast(d.message||'Error','error');
+});
+
+// ─── Pagos ────────────────────────────────────────────────
+async function loadPagosAdmin(){
+  const d=await api('/api/pagos/todos');
+  const tb=document.getElementById('pagosAdminTable');
+  if(!d.success||!d.pagos.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin pagos</td></tr>';return;}
+  tb.innerHTML=d.pagos.map(p=>`<tr>
+    <td>${p.nombre} ${p.apellido}</td>
+    <td>${p.lote_codigo}</td>
+    <td><strong style="color:var(--green);">${formatCOP(p.monto)}</strong></td>
+    <td>${p.tipo_pago}</td>
+    <td>${estadoBadge(p.estado)}</td>
+    <td>${formatDate(p.fecha_pago)}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${p.estado==='pendiente'?`
+        <button class="btn btn-sm btn-success" onclick="cambiarEstadoPago(${p.id},'aprobado')">✓</button>
+        <button class="btn btn-sm btn-danger" onclick="cambiarEstadoPago(${p.id},'rechazado')">✗</button>`:'—'}
+      ${p.comprobante_url?`<a href="${p.comprobante_url}" target="_blank" class="btn btn-sm btn-secondary">Ver</a>`:''}
+    </td>
+  </tr>`).join('');
+}
+async function cambiarEstadoPago(id,estado){
+  const d=await api(`/api/pagos/${id}/estado`,'PUT',{estado});
+  if(d.success){showToast(`Pago ${estado}`,'success');loadPagosAdmin();}
+  else showToast(d.message,'error');
+}
+
+// ─── PQRS Admin ───────────────────────────────────────────
+async function loadPqrsAdmin(){
+  const d=await api('/api/pqrs/todas');
+  const c=document.getElementById('pqrsAdminList');
+  if(!d.success||!d.pqrs.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin PQRS</p></div>';return;}
+  c.innerHTML=d.pqrs.map(p=>`
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+      <div><strong>${p.asunto}</strong> <span style="font-size:12px;color:var(--sub);">${p.tipo} · ${p.nombre} ${p.apellido}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">${estadoBadge(p.estado)}
+        ${p.estado!=='cerrada'?`<button class="btn btn-sm btn-primary" onclick="abrirResponder(${p.id},'${p.asunto.replace(/'/g,"\\'")}','${p.descripcion.replace(/'/g,"\\'")}')">Responder</button>`:''}
+      </div>
+    </div>
+    <p style="color:var(--sub);font-size:13px;">${p.descripcion}</p>
+    ${p.respuesta?`<div style="background:rgba(52,199,89,.08);border-left:3px solid var(--green);padding:8px 12px;border-radius:8px;margin-top:8px;font-size:13px;"><strong>Respuesta:</strong> ${p.respuesta}</div>`:''}
+  </div>`).join('');
+}
+function abrirResponder(id,asunto,desc){
+  currentPqrsId=id;
+  document.getElementById('pqrsDetalleAdmin').innerHTML=`<strong>${asunto}</strong><br><span style="color:var(--sub);">${desc}</span>`;
+  document.getElementById('respuestaTexto').value='';
+  openModal('modalResponder');
+}
+document.getElementById('btnEnviarRespuesta').addEventListener('click',async()=>{
+  const resp=document.getElementById('respuestaTexto').value.trim();
+  if(!resp){showToast('Escribe una respuesta','warning');return;}
+  const d=await api(`/api/pqrs/${currentPqrsId}/responder`,'PUT',{respuesta:resp});
+  if(d.success){showToast('Respuesta enviada','success');closeModal('modalResponder');loadPqrsAdmin();}
+  else showToast(d.message,'error');
+});
+
+// ─── Usuarios ─────────────────────────────────────────────
+async function loadUsuarios(){
+  const d=await api('/api/proyecto/usuarios');
+  const tb=document.getElementById('usuariosTable');
+  if(!d.success||!d.usuarios.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:24px;">Sin usuarios</td></tr>';return;}
+  tb.innerHTML=d.usuarios.map(u=>`<tr>
+    <td><strong>${u.nombre} ${u.apellido}</strong></td>
+    <td>${u.email}</td><td>${u.cedula||'—'}</td><td>${u.telefono||'—'}</td>
+    <td>${estadoBadge(u.rol)}</td><td>${formatDate(u.created_at)}</td>
+  </tr>`).join('');
+}
+</script>
+</body>
+</html>

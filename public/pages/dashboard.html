@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — LotesApp</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
+</head>
+<body>
+<div class="app-layout">
+  <button class="sidebar-toggle" id="sidebarToggle">
+    <svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div><div class="sidebar-brand-text">LotesApp</div><div class="sidebar-brand-sub">Gestión Inmobiliaria</div></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Mi Cuenta</div>
+      <ul class="sidebar-nav">
+        <li><a href="/dashboard">
+          <div class="nav-icon icon-blue"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+          Dashboard
+        </a></li>
+        <li><a href="/lotes">
+          <div class="nav-icon icon-green"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="3 11 12 2 21 11 21 21 3 21"/><line x1="9" y1="21" x2="9" y2="14"/><line x1="15" y1="21" x2="15" y2="14"/><line x1="9" y1="14" x2="15" y2="14"/></svg></div>
+          Lotes
+        </a></li>
+        <li><a href="/pagos">
+          <div class="nav-icon icon-orange"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          Mis Pagos
+        </a></li>
+        <li><a href="/pqrs">
+          <div class="nav-icon icon-purple"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+          PQRS
+        </a></li>
+        <li><a href="/proyecto">
+          <div class="nav-icon icon-teal"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+          El Proyecto
+        </a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">
+      <ul class="sidebar-nav">
+        <li><a href="#" onclick="logout(); return false;" style="color:var(--red);">
+          <div class="nav-icon icon-red"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+          Cerrar Sesión
+        </a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 id="welcomeTitle">Bienvenido 👋</h1>
+      <p>Aquí tienes un resumen de tu cuenta</p>
+    </div>
+
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-icon blue"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+        <div><div class="dash-val" id="cLotes">—</div><div class="dash-lbl">Mis Lotes</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon green"><svg viewBox="0 0 24 24" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div><div class="dash-val" id="cPagados">—</div><div class="dash-lbl">Total Pagado</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon orange"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div><div class="dash-val" id="cSaldo">—</div><div class="dash-lbl">Saldo Pendiente</div></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon purple"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <div><div class="dash-val" id="cPqrs">—</div><div class="dash-lbl">PQRS Enviadas</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <h3>Mis Lotes</h3>
+        <a href="/pagos" class="btn btn-primary btn-sm">+ Registrar Pago</a>
+      </div>
+      <div id="misLotesContainer"><p style="color:var(--sub);">Cargando...</p></div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h3 style="margin-bottom:20px;">Últimos Pagos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Lote</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody id="pagosTable"><tr><td colspan="5" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <h3>Mis PQRS</h3>
+        <a href="/pqrs" class="btn btn-secondary btn-sm">Nueva PQRS</a>
+      </div>
+      <div id="pqrsContainer"><p style="color:var(--sub);">Cargando...</p></div>
+    </div>
+  </main>
+</div>
+<div class="toast-container"></div>
+<script src="../js/app.js"></script>
+<script>
+(async()=>{
+  const u = await checkSession();
+  if(!u){window.location.replace('/login');return;}
+  document.getElementById('welcomeTitle').textContent=`Hola, ${u.nombre} 👋`;
+  loadMisLotes(); loadMisPagos(); loadMisPqrs();
+})();
+
+async function loadMisLotes(){
+  const d=await api('/api/lotes/cliente/mis-lotes');
+  document.getElementById('cLotes').textContent=d.lotes?.length||0;
+  if(!d.success||!d.lotes.length){
+    document.getElementById('misLotesContainer').innerHTML=
+      '<p style="color:var(--sub);text-align:center;padding:20px;">No tienes lotes adquiridos aún. <a href="/lotes" style="color:var(--blue);">Ver catálogo</a></p>';
+    document.getElementById('cPagados').textContent=formatCOP(0);
+    document.getElementById('cSaldo').textContent=formatCOP(0);
+    return;
+  }
+  let tp=0,ts=0;
+  document.getElementById('misLotesContainer').innerHTML=d.lotes.map(l=>{
+    const pct=Math.min(100,Math.round((l.pagado/l.precio_total)*100));
+    tp+=Number(l.pagado); ts+=Number(l.saldo);
+    return `<div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        <div><strong>Lote ${l.codigo}</strong> — <span style="color:var(--sub);font-size:13px;">${l.proyecto_nombre||''} ${l.proyecto_inmobiliaria?'· '+l.proyecto_inmobiliaria:''}</span></div>
+        ${estadoBadge('vendido')}
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--sub);margin-bottom:12px;">
+        <span>📐 ${l.area_m2} m²</span><span>📍 ${l.ubicacion||'—'}</span>
+        <span>💰 Total: ${formatCOP(l.precio_total)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span>Pagado: <strong style="color:var(--green);">${formatCOP(l.pagado)}</strong></span>
+        <span>Saldo: <strong style="color:var(--orange);">${formatCOP(l.saldo)}</strong></span>
+        <span>${pct}%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('cPagados').textContent=formatCOP(tp);
+  document.getElementById('cSaldo').textContent=formatCOP(ts);
+}
+async function loadMisPagos(){
+  const d=await api('/api/pagos/mis-pagos');
+  const tb=document.getElementById('pagosTable');
+  if(!d.success||!d.pagos.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--sub);">Sin pagos registrados</td></tr>';return;}
+  tb.innerHTML=d.pagos.slice(0,5).map(p=>`<tr>
+    <td>${p.lote_codigo}</td>
+    <td><strong style="color:var(--green);">${formatCOP(p.monto)}</strong></td>
+    <td>${p.tipo_pago}</td><td>${estadoBadge(p.estado)}</td>
+    <td>${formatDate(p.fecha_pago)}</td></tr>`).join('');
+}
+async function loadMisPqrs(){
+  const d=await api('/api/pqrs/mis-pqrs');
+  document.getElementById('cPqrs').textContent=d.pqrs?.length||0;
+  const c=document.getElementById('pqrsContainer');
+  if(!d.success||!d.pqrs.length){c.innerHTML='<p style="color:var(--sub);text-align:center;padding:20px;">No has enviado PQRS. <a href="/pqrs" style="color:var(--blue);">Enviar una</a></p>';return;}
+  c.innerHTML=d.pqrs.slice(0,3).map(p=>`
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div><span style="font-weight:700;">${p.asunto}</span>
+      <span style="font-size:12px;color:var(--sub);display:block;">${p.tipo} · ${formatDate(p.created_at)}</span></div>
+      ${estadoBadge(p.estado)}
+    </div>`).join('');
+}
+</script>
+</body>
+</html>

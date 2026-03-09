@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro — Portal del Sol</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+  history.replaceState(null, '', window.location.href);
+  window.addEventListener('popstate', function() { history.pushState(null, '', window.location.href); });
+</script>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-box" style="max-width:500px;">
+    <div class="auth-logo">
+      <h1>🏡 Portal del Sol</h1>
+      <p>Crea tu cuenta gratuita</p>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="nombre" placeholder="Tu nombre">
+      </div>
+      <div class="form-group">
+        <label>Apellido *</label>
+        <input type="text" id="apellido" placeholder="Tu apellido">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Correo electrónico *</label>
+      <input type="email" id="email" placeholder="tu@email.com">
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="form-group">
+        <label>Cédula</label>
+        <input type="text" id="cedula" placeholder="00000000">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="telefono" placeholder="300 000 0000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Contraseña *</label>
+      <input type="password" id="password" placeholder="Mínimo 8 caracteres" oninput="checkStrength()">
+      <div class="strength-meter"><div class="strength-bar" id="strengthBar"></div></div>
+      <small id="strengthLabel" style="color:var(--sub); font-size:12px;"></small>
+    </div>
+    <div class="form-group">
+      <label>Confirmar contraseña *</label>
+      <input type="password" id="password2" placeholder="Repite tu contraseña">
+    </div>
+    <button class="btn btn-primary" id="btnReg" style="width:100%; justify-content:center;" onclick="doRegistro()">
+      Crear Cuenta
+    </button>
+    <p style="text-align:center; margin-top:16px; font-size:14px; color:var(--sub);">
+      ¿Ya tienes cuenta? <a href="/login" style="color:var(--blue); font-weight:700;">Inicia sesión</a>
+    </p>
+  </div>
+</div>
+<div class="toast-container"></div>
+<script src="../js/app.js"></script>
+<script>
+(async () => {
+  const u = await checkSession();
+  if (u) window.location.replace('/dashboard');
+})();
+
+function checkStrength() {
+  const p = document.getElementById('password').value;
+  const bar = document.getElementById('strengthBar');
+  const lbl = document.getElementById('strengthLabel');
+  let score = 0;
+  if (p.length >= 8) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  const levels = [
+    { pct: '0%', color: '', label: '' },
+    { pct: '25%', color: '#FF3B30', label: 'Muy débil' },
+    { pct: '50%', color: '#FF9500', label: 'Débil' },
+    { pct: '75%', color: '#007AFF', label: 'Buena' },
+    { pct: '100%', color: '#34C759', label: 'Excelente' }
+  ];
+  bar.style.width = levels[score].pct;
+  bar.style.background = levels[score].color;
+  lbl.textContent = levels[score].label;
+}
+
+async function doRegistro() {
+  const btn = document.getElementById('btnReg');
+  const nombre   = document.getElementById('nombre').value.trim();
+  const apellido = document.getElementById('apellido').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const cedula   = document.getElementById('cedula').value.trim();
+  const telefono = document.getElementById('telefono').value.trim();
+  const password = document.getElementById('password').value;
+  const password2= document.getElementById('password2').value;
+
+  if (!nombre || !apellido || !email || !password) {
+    return showToast('Completa los campos obligatorios', 'warning');
+  }
+  if (password.length < 8) return showToast('La contraseña debe tener al menos 8 caracteres', 'warning');
+  if (password !== password2)  return showToast('Las contraseñas no coinciden', 'error');
+
+  btn.disabled = true; btn.textContent = 'Creando cuenta...';
+  try {
+    const d = await api('/api/auth/registro', 'POST', { nombre, apellido, email, cedula, telefono, password });
+    if (d.success) {
+      showToast('¡Cuenta creada!', 'success', 1500);
+      setTimeout(() => window.location.href = '/dashboard', 800);
+    } else {
+      showToast(d.message, 'error');
+      btn.disabled = false; btn.textContent = 'Crear Cuenta';
+    }
+  } catch {
+    showToast('Error de conexión', 'error');
+    btn.disabled = false; btn.textContent = 'Crear Cuenta';
+  }
+}
+</script>
+</body>
+</html>

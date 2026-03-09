@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lotes — LotesApp</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
+</head>
+<body>
+<div class="app-layout">
+  <button class="sidebar-toggle" id="sidebarToggle"><svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div><div class="sidebar-brand-text">LotesApp</div><div class="sidebar-brand-sub">Gestión Inmobiliaria</div></div>
+    </div>
+    <div class="sidebar-section"><ul class="sidebar-nav">
+      <li><a href="/dashboard"><div class="nav-icon icon-blue"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>Dashboard</a></li>
+      <li><a href="/lotes" class="active"><div class="nav-icon icon-green"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>Lotes</a></li>
+      <li><a href="/pagos"><div class="nav-icon icon-orange"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>Mis Pagos</a></li>
+      <li><a href="/pqrs"><div class="nav-icon icon-purple"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>PQRS</a></li>
+      <li><a href="/proyecto"><div class="nav-icon icon-teal"><svg viewBox="0 0 24 24" stroke-width="1.8"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>El Proyecto</a></li>
+    </ul></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section"><ul class="sidebar-nav">
+      <li><a href="#" onclick="logout();return false;" style="color:var(--red);"><div class="nav-icon icon-red"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>Cerrar Sesión</a></li>
+    </ul></div>
+  </aside>
+  <main class="main-content">
+    <div class="page-header"><h1>Catálogo de Lotes</h1><p>Explora los lotes disponibles en nuestros proyectos</p></div>
+    <div class="filters">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍 Buscar lote...">
+      <select class="filter-select" id="filterEstado">
+        <option value="">Todos los estados</option>
+        <option value="disponible">Disponible</option>
+        <option value="reservado">Reservado</option>
+        <option value="vendido">Vendido</option>
+      </select>
+    </div>
+    <div class="lotes-grid" id="lotesGrid"><p style="color:var(--sub);">Cargando lotes...</p></div>
+  </main>
+</div>
+<div class="toast-container"></div>
+<script src="../js/app.js"></script>
+<script>
+(async()=>{
+  const u=await checkSession(); if(!u){window.location.replace('/login');return;}
+  loadLotes();
+  document.getElementById('filterEstado').addEventListener('change',loadLotes);
+  document.getElementById('searchInput').addEventListener('input',loadLotes);
+})();
+async function loadLotes(){
+  const estado=document.getElementById('filterEstado').value;
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const d=await api('/api/lotes'+(estado?'?estado='+estado:''));
+  const grid=document.getElementById('lotesGrid');
+  if(!d.success){grid.innerHTML='<p style="color:var(--red);">Error cargando lotes</p>';return;}
+  let lotes=d.lotes;
+  if(q) lotes=lotes.filter(l=>l.codigo.toLowerCase().includes(q)||l.ubicacion?.toLowerCase().includes(q)||l.proyecto_nombre?.toLowerCase().includes(q));
+  if(!lotes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--sub);"><p style="font-size:2rem;">🏗️</p><p>Sin lotes que coincidan</p></div>';return;}
+  grid.innerHTML=lotes.map(l=>`
+  <div class="lote-card">
+    ${l.imagen_url?`<img src="${l.imagen_url}" class="lote-img" alt="Lote ${l.codigo}">`:`
+    <div class="lote-img-placeholder"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>`}
+    <div class="lote-header">
+      <span class="lote-code">Lote ${l.codigo}</span>
+      <span class="lote-estado ${l.estado}">${l.estado}</span>
+    </div>
+    <div class="lote-body">
+      ${l.proyecto_nombre?`<p style="font-size:12px;color:var(--blue);font-weight:700;margin-bottom:10px;">🏢 ${l.proyecto_nombre}${l.proyecto_inmobiliaria?' · '+l.proyecto_inmobiliaria:''}</p>`:''}
+      <div class="lote-info">
+        <div class="lote-detail"><div class="val">${l.area_m2} m²</div><div class="key">Área</div></div>
+        <div class="lote-detail"><div class="val">${l.etapa_nombre}</div><div class="key">Etapa</div></div>
+      </div>
+      ${l.ubicacion?`<p style="font-size:13px;color:var(--sub);margin-bottom:8px;">📍 ${l.ubicacion}</p>`:''}
+      <div class="lote-price">${formatCOP(l.precio)}</div>
+      ${l.estado==='disponible'?`<button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="interesat('${l.codigo}')">Me interesa</button>`:`<button class="btn" style="width:100%;justify-content:center;background:var(--bg);color:var(--sub);cursor:default;">${l.estado==='vendido'?'Vendido':'Reservado'}</button>`}
+    </div>
+  </div>`).join('');
+}
+function interesat(cod){showToast(`¡Interés registrado en Lote ${cod}! Un asesor te contactará.`,'success');}
+</script>
+</body>
+</html>
