@@ -52,6 +52,15 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Diagnóstico temporal — borrar después
+app.get('/api/debug', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL: process.env.DATABASE_URL ? '✅ EXISTE' : '❌ NO EXISTE',
+    SESSION_SECRET: process.env.SESSION_SECRET ? '✅ EXISTE' : '❌ NO EXISTE',
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`\n🚀 Servidor corriendo en http://localhost:${PORT}`);
   console.log(`📌 Admin: admin@inmobiliaria.com / Admin2024*\n`);
