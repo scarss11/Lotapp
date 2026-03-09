@@ -22,13 +22,9 @@ router.post('/login', async (req, res) => {
       return res.json({ success: false, message: 'Credenciales incorrectas.' });
 
     req.session.usuario = {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      apellido: usuario.apellido,
-      email: usuario.email,
-      rol: usuario.rol
+      id: usuario.id, nombre: usuario.nombre, apellido: usuario.apellido,
+      email: usuario.email, rol: usuario.rol
     };
-
     req.session.save((err) => {
       if (err) return res.json({ success: false, message: 'Error al iniciar sesión.' });
       res.json({ success: true, rol: usuario.rol, nombre: usuario.nombre });
@@ -53,17 +49,17 @@ router.post('/registro', async (req, res) => {
     const hash = await bcrypt.hash(password, 12);
     const [result] = await db.query(
       `INSERT INTO usuarios (nombre, apellido, email, cedula, telefono, password, rol, email_verificado)
-       VALUES (?, ?, ?, ?, ?, ?, 'cliente', 1)`,
+       VALUES (?, ?, ?, ?, ?, ?, 'cliente', true)`,
       [nombre.trim(), apellido.trim(), email.toLowerCase().trim(), cedula || null, telefono || null, hash]
     );
 
-    const nuevoId = result.insertId;
+    const nuevoId = result[0]?.id || result.insertId;
 
     try {
       await enviarEmail({
         to: email,
-        subject: '¡Bienvenido a Portal del Sol! 🏡',
-        html: `<h2>Hola ${nombre}, bienvenido a Portal del Sol</h2><p>Tu cuenta ha sido creada exitosamente.</p>`
+        subject: '¡Bienvenido a LotesApp! 🏡',
+        html: `<h2>Hola ${nombre}, bienvenido a LotesApp</h2><p>Tu cuenta ha sido creada exitosamente.</p>`
       });
     } catch (_) {}
 
@@ -83,15 +79,6 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => res.json({ success: true }));
 });
 
-// GET /api/me
-router.get('/me', (req, res) => {
-  if (req.session && req.session.usuario) {
-    res.json({ loggedIn: true, usuario: req.session.usuario });
-  } else {
-    res.json({ loggedIn: false });
-  }
-});
-
 // POST /api/auth/reset-solicitud
 router.post('/reset-solicitud', async (req, res) => {
   try {
@@ -103,11 +90,10 @@ router.post('/reset-solicitud', async (req, res) => {
     const token = uuidv4();
     const expira = new Date(Date.now() + 3600000);
 
-    // MySQL: INSERT ... ON DUPLICATE KEY UPDATE
     await db.query(
       `INSERT INTO reset_tokens (usuario_id, token, expira_en)
        VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE token = VALUES(token), expira_en = VALUES(expira_en)`,
+       ON CONFLICT (usuario_id) DO UPDATE SET token = EXCLUDED.token, expira_en = EXCLUDED.expira_en`,
       [rows[0].id, token, expira]
     );
 
@@ -115,7 +101,7 @@ router.post('/reset-solicitud', async (req, res) => {
     try {
       await enviarEmail({
         to: email,
-        subject: 'Recuperar contraseña - Portal del Sol',
+        subject: 'Recuperar contraseña - LotesApp',
         html: `<p>Haz clic para restablecer tu contraseña:</p><a href="${url}">${url}</a><p>Expira en 1 hora.</p>`
       });
     } catch (_) {}

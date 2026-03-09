@@ -4,7 +4,6 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pagos — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
-<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
 </head>
 <body>
 <div class="app-layout">
@@ -27,11 +26,16 @@
       <li><a href="#" onclick="logout();return false;" style="color:var(--red);"><div class="nav-icon icon-red"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>Cerrar Sesión</a></li>
     </ul></div>
   </aside>
+
   <main class="main-content">
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-      <div><h1>Mis Pagos</h1><p>Historial de pagos realizados</p></div>
+      <div><h1>Mis Pagos</h1><p>Historial de pagos registrados</p></div>
       <button class="btn btn-primary" onclick="openModal('modalPago')">+ Registrar Pago</button>
     </div>
+
+    <!-- Resumen de estados -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;" id="resumenPagos"></div>
+
     <div class="table-wrap">
       <table>
         <thead><tr><th>Lote</th><th>Proyecto</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Fecha</th><th>Comprobante</th></tr></thead>
@@ -49,7 +53,7 @@
       <label>Lote (compra)</label>
       <select id="pagoCompraId"><option value="">Cargando mis lotes...</option></select>
     </div>
-    <div class="form-group"><label>Monto ($)</label><input type="number" id="pagoMonto" placeholder="0"></div>
+    <div class="form-group"><label>Monto ($) *</label><input type="number" id="pagoMonto" placeholder="0"></div>
     <div class="form-group">
       <label>Tipo de pago</label>
       <select id="pagoTipo">
@@ -61,38 +65,70 @@
     </div>
     <div class="form-group"><label>Comprobante (imagen/PDF)</label><input type="file" id="pagoComprobante" accept="image/*,.pdf"></div>
     <div class="form-group"><label>Notas</label><textarea id="pagoNotas" rows="2" placeholder="Referencia, observaciones..."></textarea></div>
+    <p style="font-size:12px;color:var(--sub);margin-bottom:12px;">⏳ Tu pago quedará en estado <strong>Pendiente</strong> hasta que el administrador lo apruebe.</p>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeModal('modalPago')">Cancelar</button>
       <button class="btn btn-primary" id="btnGuardarPago">Enviar Pago</button>
     </div>
   </div>
 </div>
+
 <div class="toast-container"></div>
 <script src="../js/app.js"></script>
 <script>
 (async()=>{
-  const u=await checkSession(); if(!u){window.location.replace('/login');return;}
+  const u=await checkSession();
+  if(!u){window.location.replace('/login');return;}
   loadPagos(); loadMisCompras();
 })();
+
 async function loadPagos(){
   const d=await api('/api/pagos/mis-pagos');
   const tb=document.getElementById('pagosTable');
-  if(!d.success||!d.pagos.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin pagos registrados</td></tr>';return;}
+  const resumen=document.getElementById('resumenPagos');
+  if(!d.success||!d.pagos.length){
+    tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin pagos registrados</td></tr>';
+    resumen.innerHTML='';
+    return;
+  }
+  // Resumen totales
+  const pendiente=d.pagos.filter(p=>p.estado==='pendiente').length;
+  const aprobado=d.pagos.filter(p=>p.estado==='aprobado').length;
+  const rechazado=d.pagos.filter(p=>p.estado==='rechazado').length;
+  const totalAprobado=d.pagos.filter(p=>p.estado==='aprobado').reduce((s,p)=>s+Number(p.monto),0);
+  resumen.innerHTML=`
+    <div class="dash-card" style="min-width:140px;flex:1;">
+      <div class="dash-icon green"><svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><div class="dash-val">${aprobado}</div><div class="dash-lbl">Aprobados</div></div>
+    </div>
+    <div class="dash-card" style="min-width:140px;flex:1;">
+      <div class="dash-icon orange"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div><div class="dash-val">${pendiente}</div><div class="dash-lbl">Pendientes</div></div>
+    </div>
+    ${rechazado?`<div class="dash-card" style="min-width:140px;flex:1;"><div class="dash-icon red"><svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><div><div class="dash-val">${rechazado}</div><div class="dash-lbl">Rechazados</div></div></div>`:''}
+    <div class="dash-card" style="min-width:160px;flex:1;">
+      <div class="dash-icon blue"><svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+      <div><div class="dash-val" style="font-size:1rem;">${formatCOP(totalAprobado)}</div><div class="dash-lbl">Total pagado</div></div>
+    </div>`;
+
   tb.innerHTML=d.pagos.map(p=>`<tr>
     <td><strong>${p.lote_codigo}</strong></td>
     <td style="font-size:13px;color:var(--sub);">${p.proyecto_nombre||'—'}</td>
     <td><strong style="color:var(--green);">${formatCOP(p.monto)}</strong></td>
-    <td>${p.tipo_pago}</td><td>${estadoBadge(p.estado)}</td>
-    <td>${formatDate(p.fecha_pago)}</td>
-    <td>${p.comprobante_url?`<a href="${p.comprobante_url}" target="_blank" style="color:var(--blue);">Ver</a>`:'—'}</td>
+    <td style="font-size:13px;">${p.tipo_pago}</td>
+    <td>${estadoBadge(p.estado)}</td>
+    <td style="font-size:13px;">${formatDate(p.fecha_pago)}</td>
+    <td>${p.comprobante_url?`<a href="${p.comprobante_url}" target="_blank" class="btn btn-sm btn-secondary">Ver</a>`:'—'}</td>
   </tr>`).join('');
 }
+
 async function loadMisCompras(){
   const d=await api('/api/lotes/cliente/mis-lotes');
   const sel=document.getElementById('pagoCompraId');
   if(!d.success||!d.lotes.length){sel.innerHTML='<option value="">Sin lotes adquiridos</option>';return;}
   sel.innerHTML='<option value="">Seleccionar lote...</option>'+d.lotes.map(l=>`<option value="${l.id}">${l.codigo} — ${l.proyecto_nombre||''}</option>`).join('');
 }
+
 document.getElementById('btnGuardarPago').addEventListener('click', async()=>{
   const compraId=document.getElementById('pagoCompraId').value;
   const monto=document.getElementById('pagoMonto').value;
@@ -104,7 +140,7 @@ document.getElementById('btnGuardarPago').addEventListener('click', async()=>{
   const f=document.getElementById('pagoComprobante').files[0];
   if(f) fd.append('comprobante',f);
   const d=await api('/api/pagos','POST',fd,true);
-  if(d.success){showToast('Pago registrado. Pendiente de aprobación.','success');closeModal('modalPago');loadPagos();}
+  if(d.success){showToast('✅ Pago registrado — Pendiente de aprobación','success');closeModal('modalPago');loadPagos();}
   else showToast(d.message||'Error','error');
 });
 </script>

@@ -22,6 +22,17 @@ app.use(session({
   }
 }));
 
+// Headers anti-cache para páginas protegidas
+app.use((req, res, next) => {
+  const protegidas = ['/dashboard', '/admin', '/lotes', '/pagos', '/pqrs', '/proyecto'];
+  if (protegidas.includes(req.path)) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 // Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 

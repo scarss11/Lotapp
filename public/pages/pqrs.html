@@ -3,7 +3,6 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PQRS — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
-<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
 </head>
 <body>
 <div class="app-layout">
@@ -26,51 +25,109 @@
       <li><a href="#" onclick="logout();return false;" style="color:var(--red);"><div class="nav-icon icon-red"><svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>Cerrar Sesión</a></li>
     </ul></div>
   </aside>
+
   <main class="main-content">
     <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div><h1>PQRS</h1><p>Peticiones, Quejas, Reclamos y Sugerencias</p></div>
       <button class="btn btn-primary" onclick="openModal('modalPqrs')">+ Nueva PQRS</button>
     </div>
-    <div id="pqrsContainer"><p style="color:var(--sub);">Cargando...</p></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Asunto</th><th>Descripción</th><th>Estado</th><th>Fecha</th><th>Respuesta</th></tr></thead>
+        <tbody id="pqrsTable"><tr><td colspan="6" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
+      </table>
+    </div>
   </main>
 </div>
+
+<!-- Modal Nueva PQRS -->
 <div class="modal-overlay" id="modalPqrs">
   <div class="modal">
     <div class="modal-header"><h3>Nueva PQRS</h3><button class="modal-close" onclick="closeModal('modalPqrs')">×</button></div>
     <div class="form-group"><label>Tipo</label>
-      <select id="pqrsTipo"><option value="peticion">Petición</option><option value="queja">Queja</option><option value="reclamo">Reclamo</option><option value="sugerencia">Sugerencia</option></select>
+      <select id="pqrsTipo">
+        <option value="peticion">Petición</option>
+        <option value="queja">Queja</option>
+        <option value="reclamo">Reclamo</option>
+        <option value="sugerencia">Sugerencia</option>
+      </select>
     </div>
-    <div class="form-group"><label>Asunto</label><input type="text" id="pqrsAsunto" placeholder="Resumen breve..."></div>
-    <div class="form-group"><label>Descripción</label><textarea id="pqrsDesc" rows="4" placeholder="Detalla tu solicitud..."></textarea></div>
+    <div class="form-group"><label>Asunto *</label><input type="text" id="pqrsAsunto" placeholder="Resumen breve..."></div>
+    <div class="form-group"><label>Descripción *</label><textarea id="pqrsDesc" rows="4" placeholder="Detalla tu solicitud..."></textarea></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeModal('modalPqrs')">Cancelar</button>
       <button class="btn btn-primary" id="btnEnviarPqrs">Enviar</button>
     </div>
   </div>
 </div>
+
+<!-- Modal Ver Respuesta -->
+<div class="modal-overlay" id="modalRespuesta">
+  <div class="modal">
+    <div class="modal-header"><h3>Respuesta del Administrador</h3><button class="modal-close" onclick="closeModal('modalRespuesta')">×</button></div>
+    <div id="respuestaDetalle"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-primary" onclick="closeModal('modalRespuesta')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container"></div>
 <script src="../js/app.js"></script>
 <script>
-(async()=>{const u=await checkSession();if(!u){window.location.replace('/login');return;}loadPqrs();})();
+(async()=>{
+  const u=await checkSession();
+  if(!u){window.location.replace('/login');return;}
+  loadPqrs();
+})();
+
 async function loadPqrs(){
   const d=await api('/api/pqrs/mis-pqrs');
-  const c=document.getElementById('pqrsContainer');
-  if(!d.success||!d.pqrs.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="font-size:2rem;">💬</p><p style="color:var(--sub);">No has enviado PQRS aún.</p></div>';return;}
-  c.innerHTML=d.pqrs.map(p=>`
-  <div class="card" style="margin-bottom:16px;">
-    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-      <div><strong>${p.asunto}</strong><span style="font-size:12px;color:var(--sub);margin-left:8px;">${p.tipo}</span></div>
-      ${estadoBadge(p.estado)}
-    </div>
-    <p style="color:var(--sub);font-size:14px;margin-bottom:8px;">${p.descripcion}</p>
-    ${p.respuesta?`<div style="background:rgba(52,199,89,.08);border-left:3px solid var(--green);padding:10px 14px;border-radius:8px;margin-top:8px;font-size:14px;"><strong>Respuesta:</strong> ${p.respuesta}</div>`:''}
-    <p style="font-size:12px;color:var(--sub);margin-top:8px;">${formatDate(p.created_at)}</p>
-  </div>`).join('');
+  const tb=document.getElementById('pqrsTable');
+  if(!d.success||!d.pqrs.length){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:32px;">No has enviado PQRS aún.</td></tr>';
+    return;
+  }
+  tb.innerHTML=d.pqrs.map(p=>`<tr>
+    <td><span style="font-size:12px;background:rgba(175,82,222,.12);color:#AF52DE;padding:3px 8px;border-radius:6px;font-weight:600;">${p.tipo}</span></td>
+    <td><strong>${p.asunto}</strong></td>
+    <td style="font-size:13px;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.descripcion}</td>
+    <td>${estadoBadge(p.estado)}</td>
+    <td style="font-size:13px;">${formatDate(p.created_at)}</td>
+    <td>
+      ${p.respuesta
+        ? `<button class="btn btn-sm btn-success" onclick="verRespuesta('${p.asunto.replace(/'/g,"\\'")}','${p.respuesta.replace(/'/g,"\\'").replace(/\n/g,' ')}','${formatDate(p.fecha_respuesta||p.created_at)}')">Ver Respuesta</button>`
+        : '<span style="color:var(--sub);font-size:13px;">Pendiente</span>'}
+    </td>
+  </tr>`).join('');
 }
-document.getElementById('btnEnviarPqrs').addEventListener('click',async()=>{
-  const d=await api('/api/pqrs','POST',{tipo:document.getElementById('pqrsTipo').value,asunto:document.getElementById('pqrsAsunto').value,descripcion:document.getElementById('pqrsDesc').value});
-  if(d.success){showToast('PQRS enviada correctamente','success');closeModal('modalPqrs');loadPqrs();}
-  else showToast(d.message||'Error','error');
+
+function verRespuesta(asunto, respuesta, fecha){
+  document.getElementById('respuestaDetalle').innerHTML=`
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <p style="font-weight:700;margin-bottom:4px;">${asunto}</p>
+    </div>
+    <div style="background:rgba(52,199,89,.08);border-left:3px solid var(--green);padding:14px 16px;border-radius:8px;">
+      <p style="font-size:13px;color:var(--sub);margin-bottom:8px;">Respuesta recibida el ${fecha}</p>
+      <p style="font-size:15px;line-height:1.6;">${respuesta}</p>
+    </div>`;
+  openModal('modalRespuesta');
+}
+
+document.getElementById('btnEnviarPqrs').addEventListener('click', async()=>{
+  const tipo=document.getElementById('pqrsTipo').value;
+  const asunto=document.getElementById('pqrsAsunto').value.trim();
+  const desc=document.getElementById('pqrsDesc').value.trim();
+  if(!asunto||!desc){showToast('Completa todos los campos','warning');return;}
+  const d=await api('/api/pqrs','POST',{tipo,asunto,descripcion:desc});
+  if(d.success){
+    showToast('✅ PQRS enviada correctamente','success');
+    closeModal('modalPqrs');
+    document.getElementById('pqrsAsunto').value='';
+    document.getElementById('pqrsDesc').value='';
+    loadPqrs();
+  } else showToast(d.message||'Error','error');
 });
 </script>
 </body>

@@ -6,26 +6,24 @@ const fs      = require('fs');
 const db      = require('../config/db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
-// Storage para imágenes de lotes
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(__dirname, '../public/img/lotes');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
-  filename: (req, file, cb) => {
-    cb(null, 'lote-' + Date.now() + path.extname(file.originalname));
-  }
+  filename: (req, file, cb) => cb(null, 'lote-' + Date.now() + path.extname(file.originalname))
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// GET /api/lotes — público
+// GET /api/lotes — público, imagen hereda del proyecto si no tiene propia
 router.get('/', async (req, res) => {
   try {
     const { estado, etapa } = req.query;
     let sql = `
       SELECT l.*, e.nombre AS etapa_nombre, p.nombre AS proyecto_nombre,
-             p.inmobiliaria AS proyecto_inmobiliaria
+             p.inmobiliaria AS proyecto_inmobiliaria,
+             COALESCE(l.imagen_url, p.imagen_url) AS imagen_display
       FROM lotes l
       JOIN etapas e ON l.etapa_id = e.id
       JOIN proyectos p ON e.proyecto_id = p.id
@@ -43,12 +41,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/lotes/cliente/mis-lotes — ANTES de /:id
+// GET /api/lotes/cliente/mis-lotes
 router.get('/cliente/mis-lotes', requireAuth, async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT c.*, l.codigo, l.area_m2, l.precio AS precio_total, l.ubicacion,
-              l.imagen_url, e.nombre AS etapa_nombre,
+              COALESCE(l.imagen_url, p.imagen_url) AS imagen_display,
+              e.nombre AS etapa_nombre,
               p.nombre AS proyecto_nombre, p.inmobiliaria AS proyecto_inmobiliaria,
               COALESCE(SUM(CASE WHEN pag.estado='aprobado' THEN pag.monto ELSE 0 END),0) AS pagado,
               (l.precio - COALESCE(SUM(CASE WHEN pag.estado='aprobado' THEN pag.monto ELSE 0 END),0)) AS saldo
@@ -59,7 +58,7 @@ router.get('/cliente/mis-lotes', requireAuth, async (req, res) => {
        LEFT JOIN pagos pag ON pag.compra_id = c.id
        WHERE c.usuario_id = ?
        GROUP BY c.id, l.codigo, l.area_m2, l.precio, l.ubicacion, l.imagen_url,
-                e.nombre, p.nombre, p.inmobiliaria`,
+                p.imagen_url, e.nombre, p.nombre, p.inmobiliaria`,
       [req.session.usuario.id]
     );
     res.json({ success: true, lotes: rows });
@@ -74,7 +73,8 @@ router.get('/:id', async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT l.*, e.nombre AS etapa_nombre, p.nombre AS proyecto_nombre,
-              p.inmobiliaria AS proyecto_inmobiliaria
+              p.inmobiliaria AS proyecto_inmobiliaria,
+              COALESCE(l.imagen_url, p.imagen_url) AS imagen_display
        FROM lotes l
        JOIN etapas e ON l.etapa_id = e.id
        JOIN proyectos p ON e.proyecto_id = p.id
@@ -88,7 +88,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/lotes — admin (con imagen)
+// POST /api/lotes — admin
 router.post('/', requireAdmin, upload.single('imagen'), async (req, res) => {
   try {
     const { codigo, etapa_id, area_m2, precio, ubicacion, descripcion } = req.body;
@@ -105,7 +105,7 @@ router.post('/', requireAdmin, upload.single('imagen'), async (req, res) => {
   }
 });
 
-// PUT /api/lotes/:id — admin (con imagen opcional)
+// PUT /api/lotes/:id — admin
 router.put('/:id', requireAdmin, upload.single('imagen'), async (req, res) => {
   try {
     const { estado, precio, descripcion } = req.body;

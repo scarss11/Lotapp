@@ -3,20 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iniciar Sesión — Portal del Sol</title>
+<title>Iniciar Sesión — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
-<script>
-  history.replaceState(null, '', window.location.href);
-  window.addEventListener('popstate', function() {
-    history.pushState(null, '', window.location.href);
-  });
-</script>
 </head>
 <body>
 <div class="auth-wrap">
   <div class="auth-box">
     <div class="auth-logo">
-      <h1>🏡 Portal del Sol</h1>
+      <h1>🏡 LotesApp</h1>
       <p>Accede a tu cuenta</p>
     </div>
     <div class="auth-tabs">
@@ -34,24 +28,24 @@
         <label>Contraseña</label>
         <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button class="btn btn-primary" id="btnLogin" style="width:100%; justify-content:center; margin-top:8px;">
+      <button class="btn btn-primary" id="btnLogin" style="width:100%;justify-content:center;margin-top:8px;">
         Ingresar
       </button>
-      <p style="text-align:center; margin-top:16px; font-size:14px; color:var(--sub);">
-        ¿No tienes cuenta? <a href="/registro" style="color:var(--blue); font-weight:700;">Regístrate</a>
+      <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--sub);">
+        ¿No tienes cuenta? <a href="/registro" style="color:var(--blue);font-weight:700;">Regístrate</a>
       </p>
     </div>
 
     <!-- RECOVERY -->
     <div class="auth-tab-content" id="tab-recovery">
-      <p style="color:var(--sub); font-size:14px; margin-bottom:16px;">
+      <p style="color:var(--sub);font-size:14px;margin-bottom:16px;">
         Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña.
       </p>
       <div class="form-group">
         <label>Correo electrónico</label>
         <input type="email" id="recoveryEmail" placeholder="tu@email.com">
       </div>
-      <button class="btn btn-primary" style="width:100%; justify-content:center;" id="btnRecovery">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" id="btnRecovery">
         Enviar instrucciones
       </button>
     </div>
@@ -60,20 +54,22 @@
 <div class="toast-container"></div>
 <script src="../js/app.js"></script>
 <script>
-// Verificar si ya hay sesión activa → redirigir
+// Bloquear botón atrás en login
+history.replaceState(null, '', '/login');
+window.addEventListener('popstate', () => history.replaceState(null, '', '/login'));
+
+// Si ya hay sesión → redirigir directo
 (async () => {
   try {
-    const res = await fetch('/api/me');
+    const res  = await fetch('/api/me');
     const data = await res.json();
     if (data.loggedIn) {
       window.location.replace(data.usuario.rol === 'admin' ? '/admin' : '/dashboard');
     }
-  } catch(e) {
-    // Sin sesión, mostrar login normal
-  }
+  } catch(e) {}
 })();
 
-// ─── Tabs ───────────────────────────────────────────────
+// Tabs
 document.querySelectorAll('.auth-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -83,69 +79,49 @@ document.querySelectorAll('.auth-tab').forEach(tab => {
   });
 });
 
-// ─── Login ───────────────────────────────────────────────
+// Login
 document.getElementById('btnLogin').addEventListener('click', doLogin);
-document.getElementById('loginPass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 async function doLogin() {
-  const btn      = document.getElementById('btnLogin');
-  const email    = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPass').value;
-
-  if (!email || !password) {
-    showToast('Completa todos los campos', 'warning');
-    return;
-  }
-
-  btn.disabled    = true;
-  btn.textContent = 'Ingresando...';
-
+  const btn   = document.getElementById('btnLogin');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) { showToast('Completa todos los campos','warning'); return; }
+  btn.disabled = true; btn.textContent = 'Ingresando...';
   try {
     const res  = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password: pass })
     });
     const data = await res.json();
-
     if (data.success) {
-      showToast('¡Bienvenido, ' + data.nombre + '!', 'success', 1200);
+      showToast('¡Bienvenido, ' + data.nombre + '!','success',1200);
       setTimeout(() => {
-        if (data.rol === 'admin') {
-          window.location.href = '/admin';
-        } else {
-          window.location.href = '/dashboard';
-        }
+        window.location.replace(data.rol === 'admin' ? '/admin' : '/dashboard');
       }, 700);
     } else {
-      showToast(data.message || 'Error al iniciar sesión', 'error');
-      btn.disabled    = false;
-      btn.textContent = 'Ingresar';
+      showToast(data.message || 'Error al iniciar sesión','error');
+      btn.disabled = false; btn.textContent = 'Ingresar';
     }
-  } catch (err) {
-    showToast('Error de conexión con el servidor', 'error');
-    btn.disabled    = false;
-    btn.textContent = 'Ingresar';
+  } catch(err) {
+    showToast('Error de conexión','error');
+    btn.disabled = false; btn.textContent = 'Ingresar';
   }
 }
 
-// ─── Recovery ────────────────────────────────────────────
+// Recovery
 document.getElementById('btnRecovery').addEventListener('click', async () => {
   const email = document.getElementById('recoveryEmail').value.trim();
-  if (!email) { showToast('Ingresa tu correo', 'warning'); return; }
+  if (!email) { showToast('Ingresa tu correo','warning'); return; }
   try {
     const res  = await fetch('/api/auth/reset-solicitud', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ email })
     });
     const data = await res.json();
     showToast(data.message, data.success ? 'success' : 'error');
-  } catch(e) {
-    showToast('Error de conexión', 'error');
-  }
+  } catch(e) { showToast('Error de conexión','error'); }
 });
 </script>
 </body>

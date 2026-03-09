@@ -166,14 +166,43 @@
 <!-- Modal Asignar Lote -->
 <div class="modal-overlay" id="modalAsignar">
   <div class="modal"><div class="modal-header"><h3>Asignar Lote a Cliente</h3><button class="modal-close" onclick="closeModal('modalAsignar')">×</button></div>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:16px;">El lote aparecerá en la lista de lotes del cliente para comprar.</p>
     <div class="form-group"><label>Lote</label><select id="asigLote"></select></div>
     <div class="form-group"><label>Cliente</label><select id="asigCliente"></select></div>
     <div class="form-group"><label>Cuotas acordadas</label><input type="number" id="asigCuotas" value="12" min="1"></div>
     <div class="form-group"><label>Fecha inicio</label><input type="date" id="asigFecha"></div>
-    <div class="form-group"><label>Notas</label><textarea id="asigNotas" rows="2"></textarea></div>
+    <div class="form-group"><label>Notas</label><textarea id="asigNotas" rows="2" placeholder="Condiciones especiales..."></textarea></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeModal('modalAsignar')">Cancelar</button>
-      <button class="btn btn-primary" id="btnAsignar">Asignar</button>
+      <button class="btn btn-primary" id="btnAsignar">Asignar Lote</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Proyecto -->
+<div class="modal-overlay" id="modalEditarProyecto">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header"><h3>Editar Proyecto</h3><button class="modal-close" onclick="closeModal('modalEditarProyecto')">×</button></div>
+    <input type="hidden" id="epId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group" style="grid-column:1/-1;"><label>Nombre del proyecto *</label><input type="text" id="epNombre"></div>
+      <div class="form-group"><label>Inmobiliaria *</label><input type="text" id="epInmobiliaria"></div>
+      <div class="form-group"><label>Ubicación</label><input type="text" id="epUbicacion"></div>
+      <div class="form-group"><label>Área total (m²)</label><input type="number" id="epArea"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Descripción</label><textarea id="epDesc" rows="3"></textarea></div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Nuevas imágenes (opcional, reemplaza las actuales)</label>
+        <div class="img-upload-area" onclick="document.getElementById('epImagenes').click()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p style="color:var(--sub);font-size:14px;">Click para cambiar imágenes</p>
+        </div>
+        <input type="file" id="epImagenes" multiple accept="image/*" style="display:none;" onchange="previewImages(this,'epPreview')">
+        <div class="img-preview" id="epPreview"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditarProyecto')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarEdicionProyecto">Guardar Cambios</button>
     </div>
   </div>
 </div>
@@ -225,14 +254,19 @@ async function loadProyectosAdmin(){
   if(!d.success||!d.proyectos.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin proyectos. Crea el primero.</p></div>';return;}
   c.innerHTML=d.proyectos.map(p=>{
     let gal=[];try{gal=JSON.parse(p.galeria||'[]');}catch(_){}
-    const etps=d.etapas.filter(e=>e.proyecto_id===p.id);
+    const etps=(d.etapas||[]).filter(e=>e.proyecto_id===p.id);
+    const img=gal[0]||p.imagen_url||'';
     return `<div class="card" style="margin-bottom:20px;">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-        ${gal[0]?`<img src="${gal[0]}" style="width:120px;height:90px;object-fit:cover;border-radius:10px;flex-shrink:0;">`:''}
+        ${img?`<img src="${img}" style="width:120px;height:90px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
         <div style="flex:1;min-width:200px;">
-          <h3 style="font-size:1.1rem;">${p.nombre}</h3>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+            <h3 style="font-size:1.1rem;">${p.nombre}</h3>
+            <button class="btn btn-sm btn-secondary" onclick="abrirEditarProyecto(${p.id})" style="font-size:12px;">✏️ Editar</button>
+          </div>
           ${p.inmobiliaria?`<p style="color:var(--blue);font-size:13px;font-weight:700;">🏢 ${p.inmobiliaria}</p>`:''}
           ${p.ubicacion?`<p style="color:var(--sub);font-size:13px;">📍 ${p.ubicacion}</p>`:''}
+          ${p.descripcion?`<p style="color:var(--sub);font-size:13px;margin-top:4px;">${p.descripcion}</p>`:''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
             ${etps.map(e=>`${estadoBadge(e.estado)} <span style="font-size:12px;">${e.nombre}</span>`).join(' · ')}
           </div>
@@ -240,6 +274,20 @@ async function loadProyectosAdmin(){
       </div>
     </div>`;
   }).join('');
+}
+window._proyectosCache=null;
+async function abrirEditarProyecto(id){
+  if(!window._proyectosCache){const d=await api('/api/proyecto');window._proyectosCache=d.proyectos||[];}
+  const p=window._proyectosCache.find(x=>x.id===id);
+  if(!p)return;
+  document.getElementById('epId').value=p.id;
+  document.getElementById('epNombre').value=p.nombre||'';
+  document.getElementById('epInmobiliaria').value=p.inmobiliaria||'';
+  document.getElementById('epUbicacion').value=p.ubicacion||'';
+  document.getElementById('epArea').value=p.area_total||'';
+  document.getElementById('epDesc').value=p.descripcion||'';
+  document.getElementById('epPreview').innerHTML='';
+  openModal('modalEditarProyecto');
 }
 
 document.getElementById('btnGuardarProyecto').addEventListener('click',async()=>{
@@ -254,7 +302,7 @@ document.getElementById('btnGuardarProyecto').addEventListener('click',async()=>
   const imgs=document.getElementById('pImagenes').files;
   for(let i=0;i<imgs.length;i++) fd.append('imagenes',imgs[i]);
   const d=await api('/api/proyecto','POST',fd,true);
-  if(d.success){showToast('Proyecto creado','success');closeModal('modalProyecto');loadProyectosAdmin();loadEtapasSelect();}
+  if(d.success){window._proyectosCache=null;showToast('Proyecto creado','success');closeModal('modalProyecto');loadProyectosAdmin();loadEtapasSelect();}
   else showToast(d.message||'Error','error');
 });
 
@@ -310,14 +358,33 @@ async function abrirAsignar(loteId,loteCod){
   openModal('modalAsignar');
 }
 document.getElementById('btnAsignar').addEventListener('click',async()=>{
-  const d=await api('/api/pagos/compra','POST',{
+  const d=await api('/api/proyecto/asignar','POST',{
     lote_id:document.getElementById('asigLote').value,
     usuario_id:document.getElementById('asigCliente').value,
     cuotas_acordadas:document.getElementById('asigCuotas').value,
     fecha_inicio:document.getElementById('asigFecha').value,
     notas:document.getElementById('asigNotas').value
   });
-  if(d.success){showToast('Lote asignado al cliente','success');closeModal('modalAsignar');loadLotesAdmin();}
+  if(d.success){showToast('✅ Lote asignado — aparece en lotes del cliente','success');closeModal('modalAsignar');loadLotesAdmin();}
+  else showToast(d.message||'Error','error');
+});
+
+// ─── Editar Proyecto ──────────────────────────────────────
+
+document.getElementById('btnGuardarEdicionProyecto').addEventListener('click',async()=>{
+  const id=document.getElementById('epId').value;
+  const nombre=document.getElementById('epNombre').value.trim();
+  const inmobiliaria=document.getElementById('epInmobiliaria').value.trim();
+  if(!nombre||!inmobiliaria){showToast('Nombre e inmobiliaria son obligatorios','warning');return;}
+  const fd=new FormData();
+  fd.append('nombre',nombre); fd.append('inmobiliaria',inmobiliaria);
+  fd.append('descripcion',document.getElementById('epDesc').value);
+  fd.append('ubicacion',document.getElementById('epUbicacion').value);
+  fd.append('area_total',document.getElementById('epArea').value);
+  const imgs=document.getElementById('epImagenes').files;
+  for(let i=0;i<imgs.length;i++) fd.append('imagenes',imgs[i]);
+  const d=await api(`/api/proyecto/${id}`,'PUT',fd,true);
+  if(d.success){window._proyectosCache=null;showToast('Proyecto actualizado','success');closeModal('modalEditarProyecto');loadProyectosAdmin();}
   else showToast(d.message||'Error','error');
 });
 
