@@ -287,6 +287,3 @@ EMAIL_FROM=Portal del Sol <tucorreo@gmail.com>
 ---
 
 *Proyecto ADSO-19 — Sistema Web Inmobiliario*
-#   L o t e s A p p  
- #   L o t a p p  
- 
