@@ -4,13 +4,106 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LotesApp — Plataforma Inmobiliaria</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+.hero { background: linear-gradient(135deg, #0a0a1a 0%, #001233 50%, #0047AB 100%); min-height: 92vh; display:flex; align-items:center; position:relative; overflow:hidden; }
+.hero::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at 70% 50%, rgba(0,122,255,.25) 0%, transparent 60%); }
+.hero-content { position:relative; z-index:1; max-width:680px; }
+.hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.85); padding:6px 16px; border-radius:999px; font-size:13px; font-weight:600; margin-bottom:28px; backdrop-filter:blur(10px); }
+.hero-badge .icon-wrap { width:20px; height:20px; stroke:#fff; }
+.hero h1 { font-size:clamp(2.2rem,5vw,3.8rem); font-weight:800; color:#fff; line-height:1.1; margin-bottom:20px; letter-spacing:-1px; }
+.hero h1 span { background:linear-gradient(90deg,#007AFF,#34C759); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.hero p { font-size:1.15rem; color:rgba(255,255,255,.7); margin-bottom:36px; line-height:1.7; max-width:520px; }
+.hero-actions { display:flex; gap:14px; flex-wrap:wrap; }
+.btn-outline-white { border:1.5px solid rgba(255,255,255,.4); color:#fff; background:rgba(255,255,255,.06); backdrop-filter:blur(8px); }
+.btn-outline-white:hover { background:rgba(255,255,255,.14); }
+
+/* Stats bar */
+.stats-bar { background:#fff; border-bottom:1px solid #f0f0f5; padding:24px 0; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0; }
+.stat-item { text-align:center; padding:16px 20px; border-right:1px solid #f0f0f5; }
+.stat-item:last-child { border-right:none; }
+.stat-num { font-size:2rem; font-weight:800; color:#007AFF; line-height:1; }
+.stat-lbl { font-size:12px; color:#8e8e93; margin-top:4px; font-weight:500; text-transform:uppercase; letter-spacing:.5px; }
+
+/* Secciones */
+.section { padding:80px 0; }
+.section-header { text-align:center; margin-bottom:56px; }
+.section-header .eyebrow { display:inline-flex; align-items:center; gap:6px; background:rgba(0,122,255,.08); color:#007AFF; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:5px 14px; border-radius:999px; margin-bottom:14px; }
+.section-header .eyebrow svg { width:13px; height:13px; stroke:#007AFF; fill:none; }
+.section-header h2 { font-size:clamp(1.8rem,3.5vw,2.8rem); font-weight:800; color:#1c1c1e; margin-bottom:12px; letter-spacing:-0.5px; }
+.section-header p { color:#6e6e73; font-size:1.05rem; max-width:520px; margin:0 auto; }
+
+/* Cards proyecto */
+.proyecto-card { background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 2px 20px rgba(0,0,0,.07); border:1px solid #f0f0f5; transition:transform .25s, box-shadow .25s; }
+.proyecto-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,.12); }
+.proyecto-card-img { width:100%; height:220px; object-fit:cover; display:block; }
+.proyecto-card-body { padding:22px; }
+.proyecto-card-body h3 { font-size:1.15rem; font-weight:700; margin-bottom:6px; }
+.proyecto-card-body .inmob { color:#007AFF; font-size:13px; font-weight:600; display:flex; align-items:center; gap:5px; margin-bottom:10px; }
+.proyecto-card-body .inmob svg { width:14px; height:14px; stroke:#007AFF; fill:none; }
+.etapa-pill { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px; margin:2px; }
+.etapa-pill.activa { background:rgba(52,199,89,.1); color:#34C759; }
+.etapa-pill.completada { background:rgba(0,122,255,.1); color:#007AFF; }
+.etapa-pill.pendiente { background:rgba(255,159,10,.1); color:#FF9F0A; }
+
+/* Lotes grid */
+.lotes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+.lote-card { background:#fff; border-radius:16px; overflow:hidden; border:1px solid #f0f0f5; box-shadow:0 2px 12px rgba(0,0,0,.06); transition:transform .2s, box-shadow .2s; cursor:pointer; }
+.lote-card:hover { transform:translateY(-3px); box-shadow:0 8px 30px rgba(0,0,0,.1); }
+.lote-card-img { width:100%; height:180px; object-fit:cover; background:linear-gradient(135deg,#f0f0f5,#e5e5ea); position:relative; }
+.lote-card-img img { width:100%; height:100%; object-fit:cover; }
+.lote-estado { position:absolute; top:10px; right:10px; }
+.lote-card-body { padding:18px; }
+.lote-card-body h3 { font-size:1rem; font-weight:700; margin-bottom:4px; }
+.lote-card-body .proyecto-ref { font-size:12px; color:#007AFF; font-weight:600; margin-bottom:10px; }
+.lote-meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.lote-meta-item { display:flex; align-items:center; gap:5px; font-size:13px; color:#6e6e73; }
+.lote-meta-item svg { width:14px; height:14px; stroke:#6e6e73; fill:none; }
+.lote-precio { font-size:1.2rem; font-weight:800; color:#1c1c1e; }
+
+/* Bloqueo suave */
+.soft-lock { background:linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.95) 40%, #fff 100%); padding:60px 20px 40px; text-align:center; margin-top:-80px; position:relative; }
+.lock-box { background:#fff; border:1px solid #e5e5ea; border-radius:20px; padding:32px; max-width:480px; margin:0 auto; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+.lock-box .lock-icon { width:48px; height:48px; background:rgba(0,122,255,.08); border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.lock-box .lock-icon svg { width:24px; height:24px; stroke:#007AFF; fill:none; }
+.lock-box h3 { font-size:1.2rem; font-weight:700; margin-bottom:8px; }
+.lock-box p { color:#6e6e73; font-size:14px; margin-bottom:20px; }
+.lock-features { list-style:none; padding:0; margin:0 0 20px; text-align:left; }
+.lock-features li { display:flex; align-items:center; gap:8px; font-size:13px; color:#3a3a3c; padding:5px 0; }
+.lock-features li svg { width:16px; height:16px; stroke:#34C759; fill:none; flex-shrink:0; }
+
+/* Features */
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
+.feature-card { background:#fff; border-radius:16px; padding:28px 24px; border:1px solid #f0f0f5; }
+.feature-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
+.feature-icon svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; }
+.feature-card h3 { font-size:1rem; font-weight:700; margin-bottom:6px; }
+.feature-card p { font-size:13px; color:#6e6e73; line-height:1.6; }
+
+/* Modal lote */
+.lote-modal-img { width:100%; height:240px; object-fit:cover; border-radius:12px; margin-bottom:20px; }
+.lote-modal-specs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+.spec-item { background:#f5f5f7; border-radius:10px; padding:12px 14px; }
+.spec-item label { font-size:11px; font-weight:600; color:#8e8e93; text-transform:uppercase; letter-spacing:.5px; }
+.spec-item p { font-size:1rem; font-weight:700; color:#1c1c1e; margin-top:2px; }
+
+/* Responsive */
+@media(max-width:768px){
+  .hero { min-height:auto; padding:80px 0 60px; }
+  .lote-modal-specs { grid-template-columns:1fr; }
+  .stats-grid { grid-template-columns:1fr 1fr; }
+  .stat-item { border-right:none; border-bottom:1px solid #f0f0f5; }
+}
+</style>
 </head>
 <body>
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="navbar-inner">
     <a href="/" class="navbar-brand">
-      <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.8" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
       LotesApp
     </a>
     <ul class="navbar-nav" id="mainNav">
@@ -32,150 +125,246 @@
 <section class="hero">
   <div class="container">
     <div class="hero-content">
-      <div class="hero-badge">🏗️ Plataforma Inmobiliaria Digital</div>
-      <h1>Invierte en el futuro, elige tu lote hoy</h1>
-      <p>Explora proyectos exclusivos, adquiere tu lote y gestiona todo tu proceso desde un solo lugar.</p>
+      <div class="hero-badge">
+        <span class="icon-wrap"><svg viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="#fff"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+        Plataforma Inmobiliaria Digital
+      </div>
+      <h1>Invierte en el futuro,<br><span>elige tu lote hoy</span></h1>
+      <p>Explora proyectos exclusivos, adquiere tu lote y gestiona todo tu proceso — pagos, documentos y seguimiento — desde un solo lugar.</p>
       <div class="hero-actions">
         <a href="/registro" class="btn btn-primary">Empezar ahora</a>
-        <a href="#lotes-publicos" class="btn btn-outline">Ver lotes disponibles</a>
+        <a href="#lotes-publicos" class="btn btn-outline-white btn-secondary">Ver lotes disponibles</a>
       </div>
     </div>
   </div>
 </section>
 
 <!-- STATS -->
-<section style="background:white;padding:48px 0;">
+<div class="stats-bar">
   <div class="container">
     <div class="stats-grid" id="statsGrid">
-      <div class="stat-card"><div class="stat-number">—</div><div class="stat-label">Lotes disponibles</div></div>
-      <div class="stat-card"><div class="stat-number" style="border-top-color:var(--green);">—</div><div class="stat-label">Lotes totales</div></div>
-      <div class="stat-card"><div class="stat-number" style="border-top-color:var(--orange);">—</div><div class="stat-label">Clientes activos</div></div>
-      <div class="stat-card"><div class="stat-number" style="border-top-color:var(--red);">100%</div><div class="stat-label">Digital y seguro</div></div>
+      <div class="stat-item"><div class="stat-num" id="sDisp">—</div><div class="stat-lbl">Disponibles</div></div>
+      <div class="stat-item"><div class="stat-num" id="sTotal">—</div><div class="stat-lbl">Total lotes</div></div>
+      <div class="stat-item"><div class="stat-num" id="sClientes">—</div><div class="stat-lbl">Clientes activos</div></div>
+      <div class="stat-item"><div class="stat-num" style="color:#34C759;">100%</div><div class="stat-lbl">Digital y seguro</div></div>
     </div>
   </div>
-</section>
+</div>
 
 <!-- PROYECTOS -->
-<section class="section" id="proyectos" style="background:var(--bg);">
+<section class="section" id="proyectos" style="background:#f5f5f7;">
   <div class="container">
-    <div class="section-title">
-      <div class="accent"></div>
+    <div class="section-header">
+      <div class="eyebrow">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        Desarrollos
+      </div>
       <h2>Nuestros Proyectos</h2>
       <p>Desarrollos inmobiliarios de alta calidad en ubicaciones estratégicas</p>
     </div>
-    <div id="proyectosLanding"><p style="text-align:center;color:var(--sub);">Cargando proyectos...</p></div>
+    <div id="proyectosLanding" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
+      <p style="text-align:center;color:#8e8e93;grid-column:1/-1;">Cargando proyectos...</p>
+    </div>
   </div>
 </section>
 
 <!-- LOTES -->
-<section class="section" id="lotes-publicos" style="background:white;">
+<section class="section" id="lotes-publicos" style="background:#fff;">
   <div class="container">
-    <div class="section-title">
-      <div class="accent"></div>
+    <div class="section-header">
+      <div class="eyebrow">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Catálogo
+      </div>
       <h2>Lotes Disponibles</h2>
       <p>Encuentra el lote perfecto para construir tu hogar o inversión</p>
     </div>
-    <div class="lotes-grid" id="lotesLanding"><p style="text-align:center;color:var(--sub);">Cargando...</p></div>
-    <div style="text-align:center;margin-top:32px;"><a href="/registro" class="btn btn-primary">Ver todos los lotes →</a></div>
-  </div>
-</section>
-
-<!-- NOSOTROS -->
-<section class="section" id="nosotros" style="background:var(--bg);">
-  <div class="container">
-    <div class="section-title">
-      <div class="accent"></div>
-      <h2>¿Por qué LotesApp?</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;">
-      <div class="card" style="text-align:center;padding:32px;">
-        <div style="font-size:2.5rem;margin-bottom:12px;">🔒</div>
-        <h3 style="font-size:1.1rem;margin-bottom:8px;">100% Seguro</h3>
-        <p style="color:var(--sub);font-size:14px;">Tus documentos y pagos protegidos con tecnología de punta.</p>
-      </div>
-      <div class="card" style="text-align:center;padding:32px;">
-        <div style="font-size:2.5rem;margin-bottom:12px;">📱</div>
-        <h3 style="font-size:1.1rem;margin-bottom:8px;">100% Digital</h3>
-        <p style="color:var(--sub);font-size:14px;">Gestiona todo desde tu celular o computador, sin filas.</p>
-      </div>
-      <div class="card" style="text-align:center;padding:32px;">
-        <div style="font-size:2.5rem;margin-bottom:12px;">🤝</div>
-        <h3 style="font-size:1.1rem;margin-bottom:8px;">Soporte dedicado</h3>
-        <p style="color:var(--sub);font-size:14px;">Asesores disponibles para acompañarte en cada paso.</p>
-      </div>
+    <div class="lotes-grid" id="lotesLanding">
+      <p style="text-align:center;color:#8e8e93;grid-column:1/-1;">Cargando...</p>
     </div>
   </div>
 </section>
 
-<footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div>
-        <h4>LotesApp</h4>
-        <p>Plataforma digital para la gestión y venta de lotes inmobiliarios.</p>
-      </div>
-      <div><h4>Links</h4><p><a href="/login">Iniciar Sesión</a></p><p><a href="/registro">Registrarse</a></p></div>
-      <div><h4>Contacto</h4><p>info@lotesapp.co</p><p>+57 300 000 0000</p></div>
+<!-- BLOQUEO SUAVE -->
+<div class="soft-lock">
+  <div class="lock-box">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
     </div>
-    <div class="footer-bottom">© 2024 LotesApp · Todos los derechos reservados</div>
+    <h3>Accede a información exclusiva</h3>
+    <p>Crea una cuenta gratis y desbloquea:</p>
+    <ul class="lock-features">
+      <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Planos técnicos de cada lote</li>
+      <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Historial de precios y tendencias</li>
+      <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Reserva y proceso de compra en línea</li>
+      <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Seguimiento de pagos y documentos</li>
+    </ul>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <a href="/registro" class="btn btn-primary">Crear cuenta gratis</a>
+      <a href="/login" class="btn btn-secondary">Ya tengo cuenta</a>
+    </div>
+  </div>
+</div>
+
+<!-- NOSOTROS / FEATURES -->
+<section class="section" id="nosotros" style="background:#f5f5f7;">
+  <div class="container">
+    <div class="section-header">
+      <div class="eyebrow">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Por qué elegirnos
+      </div>
+      <h2>Una plataforma hecha para ti</h2>
+      <p>Todo lo que necesitas para invertir con confianza</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(0,122,255,.08);color:#007AFF;">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h3>100% Seguro</h3>
+        <p>Tus documentos y pagos protegidos con tecnología de punta. Sesiones cifradas y verificación de identidad.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(52,199,89,.08);color:#34C759;">
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h3>Pagos en línea</h3>
+        <p>Registra tus pagos, sube comprobantes y haz seguimiento en tiempo real. Sin filas ni trámites presenciales.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(255,159,10,.08);color:#FF9F0A;">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <h3>PQRS digital</h3>
+        <p>Canal directo con el equipo. Tus peticiones, quejas y sugerencias respondidas con trazabilidad total.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(175,82,222,.08);color:#AF52DE;">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01-.01 1.17 2 2 0 012 -1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        </div>
+        <h3>Asesoría personalizada</h3>
+        <p>Un asesor dedicado para acompañarte en cada etapa del proceso de compra de tu lote.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="background:#1c1c1e;color:rgba(255,255,255,.6);padding:40px 0;text-align:center;">
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;">
+      <div style="width:32px;height:32px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke-width="1.8" fill="none" stroke="#fff"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <span style="color:#fff;font-weight:700;font-size:1.1rem;">LotesApp</span>
+    </div>
+    <p style="font-size:13px;">© 2025 LotesApp · Todos los derechos reservados</p>
   </div>
 </footer>
 
+<!-- Modal Me Interesa / Lote Detalle -->
+<div class="modal-overlay" id="modalLoteDetalle">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 id="mdLoteTitulo">Lote</h3>
+      <button class="modal-close" onclick="closeModal('modalLoteDetalle')">×</button>
+    </div>
+    <div id="mdLoteImg" style="width:100%;height:220px;background:#f0f0f5;border-radius:12px;margin-bottom:18px;overflow:hidden;">
+      <img id="mdImg" style="width:100%;height:100%;object-fit:cover;" src="" alt="">
+    </div>
+    <div class="lote-modal-specs" id="mdSpecs"></div>
+    <div id="mdDesc" style="font-size:14px;color:#6e6e73;margin-bottom:20px;"></div>
+    <div id="mdEstadoInfo" style="margin-bottom:16px;"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="/registro" class="btn btn-primary" style="flex:1;justify-content:center;" id="mdBtnReservar">Reservar este lote</a>
+      <a href="/login" class="btn btn-secondary" style="flex:1;justify-content:center;">Ya tengo cuenta</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="js/app.js"></script>
 <script>
-async function loadStats(){
-  const d=await fetch('/api/proyecto/estadisticas').then(r=>r.json());
-  if(!d.success)return;
-  const cards=document.querySelectorAll('.stat-number');
-  cards[0].textContent=d.stats.disponibles;
-  cards[1].textContent=d.stats.total_lotes;
-  cards[2].textContent=d.stats.total_clientes;
-}
+// Cargar stats
+(async()=>{
+  const d=await api('/api/proyecto/estadisticas');
+  if(d.success){
+    document.getElementById('sDisp').textContent=d.stats.disponibles;
+    document.getElementById('sTotal').textContent=d.stats.total_lotes;
+    document.getElementById('sClientes').textContent=d.stats.total_clientes;
+  }
+  loadProyectos();
+  loadLotes();
+})();
 
 async function loadProyectos(){
-  const d=await fetch('/api/proyecto').then(r=>r.json());
+  const d=await api('/api/proyecto');
   const c=document.getElementById('proyectosLanding');
-  if(!d.success||!d.proyectos.length){c.innerHTML='<p style="text-align:center;color:#999;">Sin proyectos disponibles aún.</p>';return;}
+  if(!d.success||!d.proyectos.length){c.innerHTML='<p style="text-align:center;color:#8e8e93;grid-column:1/-1;">Sin proyectos disponibles.</p>';return;}
   c.innerHTML=d.proyectos.map(p=>{
     let gal=[];try{gal=JSON.parse(p.galeria||'[]');}catch(_){}
-    return `<div style="background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:24px;">
-      ${gal.length>=2?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
-        <img src="${gal[0]}" style="grid-column:1/3;height:260px;width:100%;object-fit:cover;">
-        <div style="display:grid;grid-rows:1fr 1fr;gap:4px;">
-          ${gal.slice(1,3).map(img=>`<img src="${img}" style="height:128px;width:100%;object-fit:cover;">`).join('')}
-        </div>
-      </div>`:gal[0]?`<img src="${gal[0]}" style="width:100%;height:220px;object-fit:cover;">`:''}
-      <div style="padding:24px;">
-        <h3 style="font-size:1.4rem;margin-bottom:4px;">${p.nombre}</h3>
-        ${p.inmobiliaria?`<p style="color:#007AFF;font-weight:700;font-size:14px;margin-bottom:8px;">🏢 ${p.inmobiliaria}</p>`:''}
-        ${p.descripcion?`<p style="color:#6E6E73;font-size:14px;margin-bottom:12px;">${p.descripcion}</p>`:''}
-        ${p.ubicacion?`<p style="font-size:13px;color:#6E6E73;">📍 ${p.ubicacion}</p>`:''}
+    const img=gal[0]||p.imagen_url||'';
+    const etps=(d.etapas||[]).filter(e=>e.proyecto_id===p.id);
+    return `<div class="proyecto-card">
+      ${img?`<img class="proyecto-card-img" src="${img}" alt="${p.nombre}" loading="lazy">`:`<div style="height:220px;background:linear-gradient(135deg,#f0f0f5,#e5e5ea);"></div>`}
+      <div class="proyecto-card-body">
+        <h3>${p.nombre}</h3>
+        ${p.inmobiliaria?`<div class="inmob"><svg viewBox="0 0 24 24" width="14" height="14" stroke-width="1.8" fill="none" stroke="#007AFF"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>${p.inmobiliaria}</div>`:''}
+        ${p.ubicacion?`<p style="font-size:13px;color:#8e8e93;display:flex;align-items:center;gap:4px;margin-bottom:10px;"><svg viewBox="0 0 24 24" width="13" height="13" stroke-width="1.8" fill="none" stroke="#8e8e93"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${p.ubicacion}</p>`:''}
+        ${p.descripcion?`<p style="font-size:13px;color:#6e6e73;margin-bottom:12px;">${p.descripcion}</p>`:''}
+        <div>${etps.map(e=>`<span class="etapa-pill ${e.estado}">${e.nombre}</span>`).join('')}</div>
       </div>
     </div>`;
   }).join('');
 }
 
 async function loadLotes(){
-  const d=await fetch('/api/lotes?estado=disponible').then(r=>r.json());
-  const grid=document.getElementById('lotesLanding');
-  if(!d.success||!d.lotes.length){grid.innerHTML='<p style="text-align:center;color:#999;grid-column:1/-1;">Sin lotes disponibles.</p>';return;}
-  grid.innerHTML=d.lotes.slice(0,6).map(l=>`
-  <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.07);">
-    ${l.imagen_url?`<img src="${l.imagen_url}" style="width:100%;height:160px;object-fit:cover;">`:`<div style="width:100%;height:160px;background:linear-gradient(135deg,#007AFF15,#34C75915);display:flex;align-items:center;justify-content:center;"><span style="font-size:2rem;">🏡</span></div>`}
-    <div style="background:linear-gradient(135deg,#007AFF,#0060cc);padding:12px 16px;color:white;display:flex;justify-content:space-between;">
-      <strong>Lote ${l.codigo}</strong><span style="font-size:12px;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:50px;">${l.estado}</span>
-    </div>
-    <div style="padding:14px 16px;">
-      ${l.proyecto_nombre?`<p style="font-size:11px;color:#007AFF;font-weight:700;margin-bottom:6px;">${l.proyecto_nombre}</p>`:''}
-      <div style="display:flex;gap:12px;font-size:13px;color:#6E6E73;margin-bottom:10px;">
-        <span>📐 ${l.area_m2} m²</span><span>📍 ${l.ubicacion||'—'}</span>
+  const d=await api('/api/lotes?estado=disponible');
+  const c=document.getElementById('lotesLanding');
+  if(!d.success||!d.lotes.length){c.innerHTML='<p style="text-align:center;color:#8e8e93;grid-column:1/-1;">Sin lotes disponibles en este momento.</p>';return;}
+  const lotes=d.lotes.slice(0,6);
+  c.innerHTML=lotes.map(l=>{
+    const img=l.imagen_display||l.imagen_url||'';
+    return `<div class="lote-card" onclick="verLote(${JSON.stringify(l).replace(/"/g,'&quot;')})">
+      <div class="lote-card-img">
+        ${img?`<img src="${img}" alt="${l.codigo}" loading="lazy">`:`<div style="width:100%;height:100%;background:linear-gradient(135deg,#e5e5ea,#d1d1d6);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="40" height="40" stroke-width="1" fill="none" stroke="#c7c7cc"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>`}
+        <div class="lote-estado">${estadoBadge(l.estado)}</div>
       </div>
-      <strong style="color:#34C759;font-size:1.1rem;">${'$'+Number(l.precio).toLocaleString('es-CO')}</strong>
-      <a href="/registro" style="display:block;margin-top:10px;background:#007AFF;color:white;border-radius:50px;padding:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;">Me interesa</a>
-    </div>
-  </div>`).join('');
+      <div class="lote-card-body">
+        <h3>${l.codigo}</h3>
+        <div class="proyecto-ref">${l.proyecto_nombre||''} ${l.proyecto_inmobiliaria?'· '+l.proyecto_inmobiliaria:''}</div>
+        <div class="lote-meta">
+          <div class="lote-meta-item"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.ubicacion||'Sin ubicación'}</div>
+          <div class="lote-meta-item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>${l.area_m2} m²</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="lote-precio">${formatCOP(l.precio)}</div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();verLote(${JSON.stringify(l).replace(/"/g,'&quot;')})">Me interesa</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-loadStats(); loadProyectos(); loadLotes();
+async function verLote(lote){
+  // Marcar como "en negociación" automáticamente
+  fetch(`/api/lotes/${lote.id}/interes`, { method:'POST' }).catch(()=>{});
+
+  document.getElementById('mdLoteTitulo').textContent='Lote '+lote.codigo;
+  const img=lote.imagen_display||lote.imagen_url||'';
+  document.getElementById('mdImg').src=img||'';
+  document.getElementById('mdImg').style.display=img?'block':'none';
+  document.getElementById('mdSpecs').innerHTML=`
+    <div class="spec-item"><label>Área</label><p>${lote.area_m2} m²</p></div>
+    <div class="spec-item"><label>Precio</label><p>${formatCOP(lote.precio)}</p></div>
+    <div class="spec-item"><label>Proyecto</label><p>${lote.proyecto_nombre||'—'}</p></div>
+    <div class="spec-item"><label>Etapa</label><p>${lote.etapa_nombre||'—'}</p></div>`;
+  document.getElementById('mdDesc').innerHTML=lote.ubicacion?`<div style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="15" height="15" stroke-width="1.8" fill="none" stroke="#8e8e93"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${lote.ubicacion}</div>`:''
+    +(lote.descripcion?`<p style="margin-top:8px;">${lote.descripcion}</p>`:'');
+  document.getElementById('mdEstadoInfo').innerHTML=`<div style="background:#f5f5f7;border-radius:10px;padding:12px 14px;font-size:13px;color:#6e6e73;"><strong style="color:#1c1c1e;">Estado:</strong> ${estadoBadge(lote.estado)} <span style="margin-left:8px;">Regístrate para reservar y bloquear este lote a tu nombre.</span></div>`;
+  openModal('modalLoteDetalle');
+}
 </script>
 </body>
 </html>

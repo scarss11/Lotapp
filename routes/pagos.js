@@ -16,10 +16,13 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 router.get('/mis-pagos', requireAuth, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT p.*, l.codigo AS lote_codigo, c.id AS compra_id
+      `SELECT p.*, l.codigo AS lote_codigo, c.id AS compra_id,
+              pr.nombre AS proyecto_nombre
        FROM pagos p
        JOIN compras c ON p.compra_id = c.id
        JOIN lotes l ON c.lote_id = l.id
+       JOIN etapas e ON l.etapa_id = e.id
+       JOIN proyectos pr ON e.proyecto_id = pr.id
        WHERE c.usuario_id = ?
        ORDER BY p.fecha_pago DESC`,
       [req.session.usuario.id]
@@ -73,11 +76,15 @@ router.post('/', requireAuth, upload.single('comprobante'), async (req, res) => 
 router.get('/todos', requireAdmin, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT p.*, u.nombre, u.apellido, u.email, l.codigo AS lote_codigo
+      `SELECT p.*, u.nombre, u.apellido, u.email,
+              l.codigo AS lote_codigo,
+              pr.nombre AS proyecto_nombre
        FROM pagos p
        JOIN compras c ON p.compra_id = c.id
        JOIN usuarios u ON c.usuario_id = u.id
        JOIN lotes l ON c.lote_id = l.id
+       JOIN etapas e ON l.etapa_id = e.id
+       JOIN proyectos pr ON e.proyecto_id = pr.id
        ORDER BY p.fecha_pago DESC`
     );
     res.json({ success: true, pagos: rows });

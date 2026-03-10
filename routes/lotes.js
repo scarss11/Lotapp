@@ -127,4 +127,18 @@ router.put('/:id', requireAdmin, upload.single('imagen'), async (req, res) => {
   }
 });
 
+
+// POST /api/lotes/:id/interes — marcar lote en negociación al hacer clic "Me interesa"
+router.post('/:id/interes', async (req, res) => {
+  try {
+    const [lote] = await db.query("SELECT * FROM lotes WHERE id = ? AND estado = 'disponible'", [req.params.id]);
+    if (lote.length) {
+      await db.query("UPDATE lotes SET estado = 'negociacion' WHERE id = ? AND estado = 'disponible'", [req.params.id]);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
 module.exports = router;

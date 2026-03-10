@@ -213,8 +213,8 @@
 let currentPqrsId=null;
 
 (async()=>{
-  const u=await checkSession('admin');
-  if(!u){window.location.replace('/login');return;}
+  const u=await requireAuth('admin');
+  if(!u) return;
   loadStats(); loadProyectosAdmin(); loadLotesAdmin(); loadPagosAdmin(); loadPqrsAdmin(); loadUsuarios();
   loadEtapasSelect();
 })();

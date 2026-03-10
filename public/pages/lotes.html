@@ -46,7 +46,7 @@
 <script src="../js/app.js"></script>
 <script>
 (async()=>{
-  const u=await checkSession(); if(!u){window.location.replace('/login');return;}
+  const u=await requireAuth(); if(!u) return;
   loadLotes();
   document.getElementById('filterEstado').addEventListener('change',loadLotes);
   document.getElementById('searchInput').addEventListener('input',loadLotes);
