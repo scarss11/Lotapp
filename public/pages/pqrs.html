@@ -77,8 +77,7 @@
 <script src="../js/app.js"></script>
 <script>
 (async()=>{
-  const u=await requireAuth();
-  if(!u) return;
+  const u=await checkSession();
   loadPqrs();
 })();
 

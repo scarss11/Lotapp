@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iniciar Sesión — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -10,15 +9,18 @@
 <div class="auth-wrap">
   <div class="auth-box">
     <div class="auth-logo">
-      <h1>🏡 LotesApp</h1>
-      <p>Accede a tu cuenta</p>
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#007AFF,#0047AB);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="2" fill="none" stroke="#fff"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:4px;">LotesApp</h1>
+      <p style="color:var(--sub);font-size:14px;">Accede a tu cuenta</p>
     </div>
+
     <div class="auth-tabs">
       <button class="auth-tab active" data-tab="login">Iniciar Sesión</button>
       <button class="auth-tab" data-tab="recovery">Recuperar Acceso</button>
     </div>
 
-    <!-- LOGIN -->
     <div class="auth-tab-content active" id="tab-login">
       <div class="form-group">
         <label>Correo electrónico</label>
@@ -28,47 +30,26 @@
         <label>Contraseña</label>
         <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button class="btn btn-primary" id="btnLogin" style="width:100%;justify-content:center;margin-top:8px;">
-        Ingresar
-      </button>
+      <div id="loginError" style="display:none;background:rgba(255,59,48,.08);color:#FF3B30;border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:12px;"></div>
+      <button class="btn btn-primary" id="btnLogin" style="width:100%;justify-content:center;margin-top:4px;">Ingresar</button>
       <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--sub);">
         ¿No tienes cuenta? <a href="/registro" style="color:var(--blue);font-weight:700;">Regístrate</a>
       </p>
     </div>
 
-    <!-- RECOVERY -->
     <div class="auth-tab-content" id="tab-recovery">
-      <p style="color:var(--sub);font-size:14px;margin-bottom:16px;">
-        Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña.
-      </p>
+      <p style="color:var(--sub);font-size:14px;margin-bottom:16px;">Ingresa tu correo para restablecer tu contraseña.</p>
       <div class="form-group">
         <label>Correo electrónico</label>
         <input type="email" id="recoveryEmail" placeholder="tu@email.com">
       </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;" id="btnRecovery">
-        Enviar instrucciones
-      </button>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" id="btnRecovery">Enviar instrucciones</button>
     </div>
   </div>
 </div>
 <div class="toast-container"></div>
 <script src="../js/app.js"></script>
 <script>
-// Bloquear botón atrás en login
-history.replaceState(null, '', '/login');
-window.addEventListener('popstate', () => history.replaceState(null, '', '/login'));
-
-// Si ya hay sesión → redirigir directo
-(async () => {
-  try {
-    const res  = await fetch('/api/me');
-    const data = await res.json();
-    if (data.loggedIn) {
-      window.location.replace(data.usuario.rol === 'admin' ? '/admin' : '/dashboard');
-    }
-  } catch(e) {}
-})();
-
 // Tabs
 document.querySelectorAll('.auth-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -80,48 +61,62 @@ document.querySelectorAll('.auth-tab').forEach(tab => {
 });
 
 // Login
-document.getElementById('btnLogin').addEventListener('click', doLogin);
-document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+const btnLogin = document.getElementById('btnLogin');
+const errBox   = document.getElementById('loginError');
+
+function showError(msg) {
+  errBox.textContent = msg;
+  errBox.style.display = 'block';
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+btnLogin.addEventListener('click', doLogin);
 
 async function doLogin() {
-  const btn   = document.getElementById('btnLogin');
   const email = document.getElementById('loginEmail').value.trim();
   const pass  = document.getElementById('loginPass').value;
-  if (!email || !pass) { showToast('Completa todos los campos','warning'); return; }
-  btn.disabled = true; btn.textContent = 'Ingresando...';
+  errBox.style.display = 'none';
+  if (!email || !pass) { showError('Completa todos los campos'); return; }
+
+  btnLogin.disabled = true;
+  btnLogin.textContent = 'Ingresando...';
+
   try {
     const res  = await fetch('/api/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ email, password: pass })
     });
     const data = await res.json();
+
     if (data.success) {
-      showToast('¡Bienvenido, ' + data.nombre + '!','success',1200);
-      setTimeout(() => {
-        window.location.replace(data.rol === 'admin' ? '/admin' : '/dashboard');
-      }, 700);
+      // Redirigir directo — el servidor ya puso la cookie JWT
+      window.location.href = data.redirect || (data.rol === 'admin' ? '/admin' : '/dashboard');
     } else {
-      showToast(data.message || 'Error al iniciar sesión','error');
-      btn.disabled = false; btn.textContent = 'Ingresar';
+      showError(data.message || 'Error al iniciar sesión');
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Ingresar';
     }
-  } catch(err) {
-    showToast('Error de conexión','error');
-    btn.disabled = false; btn.textContent = 'Ingresar';
+  } catch {
+    showError('Error de conexión. Intenta de nuevo.');
+    btnLogin.disabled = false;
+    btnLogin.textContent = 'Ingresar';
   }
 }
 
 // Recovery
 document.getElementById('btnRecovery').addEventListener('click', async () => {
   const email = document.getElementById('recoveryEmail').value.trim();
-  if (!email) { showToast('Ingresa tu correo','warning'); return; }
+  if (!email) { showToast('Ingresa tu correo', 'warning'); return; }
   try {
     const res  = await fetch('/api/auth/reset-solicitud', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ email })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin', body: JSON.stringify({ email })
     });
     const data = await res.json();
     showToast(data.message, data.success ? 'success' : 'error');
-  } catch(e) { showToast('Error de conexión','error'); }
+  } catch { showToast('Error de conexión', 'error'); }
 });
 </script>
 </body>

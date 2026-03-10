@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lotes Disponibles — LotesApp</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.pub-hero{background:linear-gradient(135deg,#001233,#0047AB);padding:80px 0 60px;text-align:center;color:#fff;}
+.pub-hero h1{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:12px;}
+.pub-hero p{color:rgba(255,255,255,.75);font-size:1.05rem;max-width:500px;margin:0 auto;}
+.filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;align-items:center;}
+.filtros select,.filtros input{padding:10px 14px;border:1.5px solid #e5e5ea;border-radius:10px;font-size:14px;background:#fff;color:#1c1c1e;outline:none;}
+.filtros select:focus,.filtros input:focus{border-color:#007AFF;}
+.lotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px;}
+.lote-card{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #f0f0f5;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s;cursor:pointer;}
+.lote-card:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.1);}
+.lote-card-img{width:100%;height:190px;object-fit:cover;background:#f0f0f5;position:relative;display:flex;align-items:center;justify-content:center;}
+.lote-card-img img{width:100%;height:100%;object-fit:cover;}
+.lote-estado-tag{position:absolute;top:10px;right:10px;}
+.lote-card-body{padding:18px;}
+.lote-meta{display:flex;gap:14px;margin:10px 0 14px;flex-wrap:wrap;}
+.lote-meta-item{display:flex;align-items:center;gap:5px;font-size:13px;color:#6e6e73;}
+.lote-meta-item svg{width:13px;height:13px;stroke:#6e6e73;fill:none;}
+.soft-gate{background:linear-gradient(180deg,rgba(255,255,255,0) 0%,#fff 50%);padding:80px 20px 60px;margin-top:-100px;text-align:center;position:relative;}
+.gate-card{background:#fff;border:1px solid #e5e5ea;border-radius:20px;padding:36px;max-width:460px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+</style>
+</head>
+<body>
+<!-- NAV -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand">
+      <div class="brand-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      LotesApp
+    </a>
+    <ul class="navbar-nav" id="mainNav">
+      <li><a href="/">Inicio</a></li>
+      <li><a href="/lotes-publicos" class="active">Lotes</a></li>
+      <li><a href="/nosotros">Nosotros</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <a href="/login" class="btn btn-secondary btn-sm">Iniciar Sesión</a>
+      <a href="/registro" class="btn btn-primary btn-sm">Registrarse</a>
+    </div>
+    <button class="hamburger" onclick="document.getElementById('mainNav').classList.toggle('open')"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="pub-hero">
+  <div class="container">
+    <h1>Lotes Disponibles</h1>
+    <p>Encuentra el lote ideal para tu inversión o proyecto de vida</p>
+  </div>
+</div>
+
+<!-- FILTROS + GRILLA -->
+<section style="background:#f5f5f7;padding:48px 0 0;">
+  <div class="container">
+    <div class="filtros">
+      <select id="filtroEstado" onchange="filtrar()">
+        <option value="">Todos los estados</option>
+        <option value="disponible">Disponible</option>
+        <option value="negociacion">En negociación</option>
+      </select>
+      <input type="number" id="filtroMax" placeholder="Precio máximo" oninput="filtrar()" style="width:180px;">
+      <select id="filtroProyecto" onchange="filtrar()">
+        <option value="">Todos los proyectos</option>
+      </select>
+    </div>
+    <div class="lotes-grid" id="lotesGrid">
+      <p style="color:#8e8e93;grid-column:1/-1;text-align:center;">Cargando lotes...</p>
+    </div>
+  </div>
+</section>
+
+<!-- BLOQUEO SUAVE -->
+<div class="soft-gate">
+  <div class="gate-card">
+    <div style="width:52px;height:52px;background:rgba(0,122,255,.08);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <svg viewBox="0 0 24 24" width="26" height="26" stroke-width="1.8" fill="none" stroke="#007AFF"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
+    <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:8px;">Desbloquea información completa</h3>
+    <p style="color:#6e6e73;font-size:14px;margin-bottom:20px;">Regístrate gratis y accede a planos técnicos, historial de precios y proceso de reserva en línea.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <a href="/registro" class="btn btn-primary">Crear cuenta gratis</a>
+      <a href="/login" class="btn btn-secondary">Ya tengo cuenta</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LOTE -->
+<div class="modal-overlay" id="modalLote">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header"><h3 id="mlTitulo">Lote</h3><button class="modal-close" onclick="closeModal('modalLote')">×</button></div>
+    <div style="width:100%;height:220px;border-radius:12px;overflow:hidden;margin-bottom:18px;background:#f0f0f5;">
+      <img id="mlImg" style="width:100%;height:100%;object-fit:cover;" src="" alt="">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;" id="mlSpecs"></div>
+    <div id="mlDesc" style="font-size:14px;color:#6e6e73;margin-bottom:20px;"></div>
+    <div style="background:#f5f5f7;border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;color:#6e6e73;">
+      <svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:4px;" stroke-width="1.8" fill="none" stroke="#007AFF"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Regístrate para ver planos, reservar y gestionar tu compra en línea.
+    </div>
+    <div style="display:flex;gap:10px;">
+      <a href="/registro" class="btn btn-primary" style="flex:1;justify-content:center;">Reservar este lote</a>
+      <a href="/login" class="btn btn-secondary" style="flex:1;justify-content:center;">Ya tengo cuenta</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+<script src="../js/app.js"></script>
+<script>
+let todosLotes = [];
+
+(async()=>{
+  const [dL, dP] = await Promise.all([api('/api/lotes'), api('/api/proyecto')]);
+  if (dP.success) {
+    const sel = document.getElementById('filtroProyecto');
+    (dP.proyectos||[]).forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.nombre;
+      sel.appendChild(o);
+    });
+  }
+  if (dL.success) {
+    todosLotes = dL.lotes.filter(l => l.estado !== 'vendido');
+    renderLotes(todosLotes);
+  }
+})();
+
+function filtrar() {
+  const est = document.getElementById('filtroEstado').value;
+  const max = parseFloat(document.getElementById('filtroMax').value) || Infinity;
+  const proy = document.getElementById('filtroProyecto').value;
+  const filtrados = todosLotes.filter(l =>
+    (!est || l.estado === est) &&
+    (Number(l.precio) <= max) &&
+    (!proy || String(l.proyecto_id) === proy)
+  );
+  renderLotes(filtrados);
+}
+
+function renderLotes(lotes) {
+  const g = document.getElementById('lotesGrid');
+  if (!lotes.length) { g.innerHTML='<p style="color:#8e8e93;grid-column:1/-1;text-align:center;padding:40px;">No hay lotes con esos filtros.</p>'; return; }
+  g.innerHTML = lotes.slice(0, 9).map(l => {
+    const img = l.imagen_display || l.imagen_url || '';
+    return `<div class="lote-card" onclick='abrirLote(${JSON.stringify(l)})'>
+      <div class="lote-card-img">
+        ${img ? `<img src="${img}" alt="${l.codigo}" loading="lazy">` : `<svg viewBox="0 0 24 24" width="48" height="48" stroke-width="1" fill="none" stroke="#c7c7cc"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>`}
+        <div class="lote-estado-tag">${estadoBadge(l.estado)}</div>
+      </div>
+      <div class="lote-card-body">
+        <div style="font-weight:700;font-size:1rem;margin-bottom:2px;">${l.codigo}</div>
+        <div style="font-size:12px;color:#007AFF;font-weight:600;margin-bottom:8px;">${l.proyecto_nombre||''}</div>
+        <div class="lote-meta">
+          <div class="lote-meta-item"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.ubicacion||'—'}</div>
+          <div class="lote-meta-item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>${l.area_m2} m²</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:1.15rem;font-weight:800;">${formatCOP(l.precio)}</div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();abrirLote(${JSON.stringify(l).replace(/"/g,'&quot;')})">Me interesa</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirLote(l) {
+  fetch(`/api/lotes/${l.id}/interes`, { method:'POST' }).catch(()=>{});
+  document.getElementById('mlTitulo').textContent = 'Lote ' + l.codigo;
+  const img = l.imagen_display || l.imagen_url || '';
+  const imgEl = document.getElementById('mlImg');
+  imgEl.src = img; imgEl.style.display = img ? 'block' : 'none';
+  document.getElementById('mlSpecs').innerHTML = `
+    <div style="background:#f5f5f7;border-radius:10px;padding:12px 14px;"><label style="font-size:11px;font-weight:600;color:#8e8e93;text-transform:uppercase;">Área</label><p style="font-size:1rem;font-weight:700;margin-top:2px;">${l.area_m2} m²</p></div>
+    <div style="background:#f5f5f7;border-radius:10px;padding:12px 14px;"><label style="font-size:11px;font-weight:600;color:#8e8e93;text-transform:uppercase;">Precio</label><p style="font-size:1rem;font-weight:700;margin-top:2px;">${formatCOP(l.precio)}</p></div>
+    <div style="background:#f5f5f7;border-radius:10px;padding:12px 14px;"><label style="font-size:11px;font-weight:600;color:#8e8e93;text-transform:uppercase;">Proyecto</label><p style="font-size:1rem;font-weight:700;margin-top:2px;">${l.proyecto_nombre||'—'}</p></div>
+    <div style="background:#f5f5f7;border-radius:10px;padding:12px 14px;"><label style="font-size:11px;font-weight:600;color:#8e8e93;text-transform:uppercase;">Estado</label><p style="margin-top:4px;">${estadoBadge(l.estado)}</p></div>`;
+  document.getElementById('mlDesc').textContent = l.descripcion || '';
+  openModal('modalLote');
+}
+</script>
+</body>
+</html>

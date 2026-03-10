@@ -1,21 +1,30 @@
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.SESSION_SECRET || 'lotesapp_jwt_secret_2024';
+
+function getUsuario(req) {
+  try {
+    const token = req.cookies?.auth_token;
+    if (!token) return null;
+    return jwt.verify(token, JWT_SECRET);
+  } catch { return null; }
+}
+
 function requireAuth(req, res, next) {
-  if (req.session && req.session.usuario) {
-    return next();
-  }
-  if (req.xhr || req.headers.accept?.includes('json')) {
-    return res.status(401).json({ success: false, message: 'No autorizado', redirect: '/login' });
-  }
-  res.redirect('/login');
+  const u = getUsuario(req);
+  if (!u) return res.status(401).json({ success: false, message: 'No autenticado.' });
+  req.session = req.session || {};
+  req.session.usuario = u;
+  req.usuario = u;
+  next();
 }
 
 function requireAdmin(req, res, next) {
-  if (req.session && req.session.usuario && req.session.usuario.rol === 'admin') {
-    return next();
-  }
-  if (req.xhr || req.headers.accept?.includes('json')) {
-    return res.status(403).json({ success: false, message: 'Acceso denegado' });
-  }
-  res.redirect('/dashboard');
+  const u = getUsuario(req);
+  if (!u || u.rol !== 'admin') return res.status(403).json({ success: false, message: 'Acceso denegado.' });
+  req.session = req.session || {};
+  req.session.usuario = u;
+  req.usuario = u;
+  next();
 }
 
 module.exports = { requireAuth, requireAdmin };

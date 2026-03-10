@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Proyectos — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
-<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
 </head>
 <body>
 <div class="app-layout">
@@ -42,8 +41,7 @@
 <script src="../js/app.js"></script>
 <script>
 (async()=>{
-  const u = await checkSession();
-  if(!u){window.location.replace('/login');return;}
+  const u=await checkSession();
 
   const d = await api('/api/proyecto');
   if(!d.success){document.getElementById('proyectosContainer').innerHTML='<p style="color:var(--sub);">Error cargando proyectos</p>';return;}

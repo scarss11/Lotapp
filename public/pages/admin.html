@@ -3,7 +3,6 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
-<script>history.pushState(null,'',window.location.href);window.addEventListener('popstate',()=>history.pushState(null,'',window.location.href));</script>
 </head>
 <body>
 <div class="app-layout">
@@ -213,8 +212,7 @@
 let currentPqrsId=null;
 
 (async()=>{
-  const u=await requireAuth('admin');
-  if(!u) return;
+  const u=await checkSession();
   loadStats(); loadProyectosAdmin(); loadLotesAdmin(); loadPagosAdmin(); loadPqrsAdmin(); loadUsuarios();
   loadEtapasSelect();
 })();
