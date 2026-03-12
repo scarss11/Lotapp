@@ -78,6 +78,7 @@
 <script>
 (async()=>{
   const u=await checkSession();
+  if(!u) return;
   loadPagos(); loadMisCompras();
 })();
 

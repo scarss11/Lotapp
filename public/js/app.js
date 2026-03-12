@@ -2,18 +2,49 @@
 //  LotesApp — app.js  v9  (auth estable)
 // ═══════════════════════════════════════════════════════════
 
-// ─── Session check — simple y confiable ──────────────────
+// ─── Session check — redirige si no hay sesión ───────────
 async function checkSession(requiredRole = null) {
   try {
     const res  = await fetch('/api/me', { credentials: 'same-origin' });
     const data = await res.json();
-    if (!data.loggedIn) return null;
-    if (requiredRole && data.usuario.rol !== requiredRole) return null;
+
+    if (!data.loggedIn) {
+      // Sin sesión: no permitir acceso a páginas protegidas
+      window.location.replace('/login');
+      return null;
+    }
+    if (requiredRole && data.usuario.rol !== requiredRole) {
+      // Rol incorrecto
+      window.location.replace(data.usuario.rol === 'admin' ? '/admin' : '/dashboard');
+      return null;
+    }
     return data.usuario;
   } catch {
+    window.location.replace('/login');
     return null;
   }
 }
+
+// ─── Bloquear botón "atrás" en páginas protegidas ────────
+(function bloquearAtras() {
+  const paginasProtegidas = ['/dashboard', '/admin', '/lotes', '/pagos', '/pqrs', '/proyecto'];
+  const esProtegida = paginasProtegidas.some(p => window.location.pathname.startsWith(p));
+  if (!esProtegida) return;
+
+  // Añadir entrada en el historial para capturar el evento "atrás"
+  history.pushState(null, '', window.location.href);
+  window.addEventListener('popstate', async () => {
+    // Al intentar retroceder, verificar sesión
+    const res  = await fetch('/api/me', { credentials: 'same-origin' }).catch(() => null);
+    const data = res ? await res.json().catch(() => ({})) : {};
+    if (!data.loggedIn) {
+      window.location.replace('/login');
+    } else {
+      // Sesión activa: volver a pushear para seguir bloqueando
+      history.pushState(null, '', window.location.href);
+    }
+  });
+})();
 
 // ─── Toast ───────────────────────────────────────────────
 function showToast(message, type = 'info', duration = 3500) {

@@ -1,22 +1,14 @@
 const express = require('express');
 const router  = express.Router();
-const multer  = require('multer');
 const path    = require('path');
-const fs      = require('fs');
 const db      = require('../config/db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { createUpload, subirArchivo } = require('../config/storage');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../public/img/lotes');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => cb(null, 'lote-' + Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+// Multer en memoria (sin escritura a disco)
+const upload = createUpload({ maxSize: 5 * 1024 * 1024 });
 
-// GET /api/lotes — público, imagen hereda del proyecto si no tiene propia
+// GET /api/lotes
 router.get('/', async (req, res) => {
   try {
     const { estado, etapa } = req.query;
@@ -92,7 +84,14 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAdmin, upload.single('imagen'), async (req, res) => {
   try {
     const { codigo, etapa_id, area_m2, precio, ubicacion, descripcion } = req.body;
-    const imagen_url = req.file ? `/img/lotes/${req.file.filename}` : null;
+
+    let imagen_url = null;
+    if (req.file) {
+      const ext  = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+      const name = 'lote-' + Date.now() + ext;
+      imagen_url = await subirArchivo(req.file.buffer, req.file.mimetype, 'lotes/' + name);
+    }
+
     await db.query(
       `INSERT INTO lotes (codigo, etapa_id, area_m2, precio, ubicacion, descripcion, estado, imagen_url)
        VALUES (?, ?, ?, ?, ?, ?, 'disponible', ?)`,
@@ -100,7 +99,7 @@ router.post('/', requireAdmin, upload.single('imagen'), async (req, res) => {
     );
     res.json({ success: true, message: 'Lote creado.' });
   } catch (err) {
-    console.error(err);
+    console.error('Error crear lote:', err);
     res.json({ success: false, message: 'Error al crear lote: ' + err.message });
   }
 });
@@ -109,8 +108,11 @@ router.post('/', requireAdmin, upload.single('imagen'), async (req, res) => {
 router.put('/:id', requireAdmin, upload.single('imagen'), async (req, res) => {
   try {
     const { estado, precio, descripcion } = req.body;
+
     if (req.file) {
-      const imagen_url = `/img/lotes/${req.file.filename}`;
+      const ext  = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+      const name = 'lote-' + Date.now() + ext;
+      const imagen_url = await subirArchivo(req.file.buffer, req.file.mimetype, 'lotes/' + name);
       await db.query(
         'UPDATE lotes SET estado=?, precio=?, descripcion=?, imagen_url=? WHERE id=?',
         [estado, precio, descripcion, imagen_url, req.params.id]
@@ -123,12 +125,12 @@ router.put('/:id', requireAdmin, upload.single('imagen'), async (req, res) => {
     }
     res.json({ success: true, message: 'Lote actualizado.' });
   } catch (err) {
+    console.error('Error actualizar lote:', err);
     res.json({ success: false, message: 'Error al actualizar.' });
   }
 });
 
-
-// POST /api/lotes/:id/interes — marcar lote en negociación al hacer clic "Me interesa"
+// POST /api/lotes/:id/interes
 router.post('/:id/interes', async (req, res) => {
   try {
     const [lote] = await db.query("SELECT * FROM lotes WHERE id = ? AND estado = 'disponible'", [req.params.id]);

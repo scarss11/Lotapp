@@ -46,6 +46,7 @@
 <script>
 (async()=>{
   const u=await checkSession();
+  if(!u) return;
   loadLotes();
   document.getElementById('filterEstado').addEventListener('change',loadLotes);
   document.getElementById('searchInput').addEventListener('input',loadLotes);

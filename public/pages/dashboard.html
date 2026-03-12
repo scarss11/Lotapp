@@ -115,6 +115,7 @@
 <script>
 (async()=>{
   const u=await checkSession();
+  if(!u) return; // checkSession ya redirige si no hay sesion
   document.getElementById('welcomeTitle').textContent=`Hola, ${u.nombre} 👋`;
   loadMisLotes(); loadMisPagos(); loadMisPqrs();
 })();

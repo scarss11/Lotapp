@@ -213,6 +213,7 @@ let currentPqrsId=null;
 
 (async()=>{
   const u=await checkSession();
+  if(!u) return;
   loadStats(); loadProyectosAdmin(); loadLotesAdmin(); loadPagosAdmin(); loadPqrsAdmin(); loadUsuarios();
   loadEtapasSelect();
 })();

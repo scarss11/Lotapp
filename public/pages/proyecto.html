@@ -42,6 +42,7 @@
 <script>
 (async()=>{
   const u=await checkSession();
+  if(!u) return;
 
   const d = await api('/api/proyecto');
   if(!d.success){document.getElementById('proyectosContainer').innerHTML='<p style="color:var(--sub);">Error cargando proyectos</p>';return;}

@@ -1,20 +1,12 @@
 const express = require('express');
 const router  = express.Router();
-const multer  = require('multer');
 const path    = require('path');
-const fs      = require('fs');
 const db      = require('../config/db');
 const { requireAdmin, requireAuth } = require('../middleware/auth');
+const { createUpload, subirArchivo } = require('../config/storage');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../public/img/proyectos');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => cb(null, 'proy-' + Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } });
+// Multer en memoria (sin escritura a disco)
+const upload = createUpload({ maxSize: 8 * 1024 * 1024 });
 
 router.get('/', async (req, res) => {
   try {
@@ -53,7 +45,7 @@ router.get('/usuarios', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/proyecto/:id — detalle de un proyecto
+// GET /api/proyecto/:id
 router.get('/:id', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM proyectos WHERE id = ?', [req.params.id]);
@@ -69,7 +61,18 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAdmin, upload.array('imagenes', 6), async (req, res) => {
   try {
     const { nombre, inmobiliaria, descripcion, ubicacion, area_total, etapas_json } = req.body;
-    const imagenes = req.files ? req.files.map(f => `/img/proyectos/${f.filename}`) : [];
+
+    // Subir imagenes a Supabase Storage
+    const imagenes = [];
+    if (req.files && req.files.length) {
+      for (const f of req.files) {
+        const ext  = path.extname(f.originalname).toLowerCase() || '.jpg';
+        const name = 'proy-' + Date.now() + '-' + Math.random().toString(36).slice(2,6) + ext;
+        const url  = await subirArchivo(f.buffer, f.mimetype, 'proyectos/' + name);
+        imagenes.push(url);
+      }
+    }
+
     const imagen_url = imagenes[0] || null;
     const galeria    = JSON.stringify(imagenes);
 
@@ -92,7 +95,7 @@ router.post('/', requireAdmin, upload.array('imagenes', 6), async (req, res) => 
     }
     res.json({ success: true, message: 'Proyecto creado.', id: proyId });
   } catch (err) {
-    console.error(err);
+    console.error('Error crear proyecto:', err);
     res.json({ success: false, message: 'Error: ' + err.message });
   }
 });
@@ -101,8 +104,15 @@ router.post('/', requireAdmin, upload.array('imagenes', 6), async (req, res) => 
 router.put('/:id', requireAdmin, upload.array('imagenes', 6), async (req, res) => {
   try {
     const { nombre, inmobiliaria, descripcion, ubicacion, area_total } = req.body;
+
     if (req.files && req.files.length) {
-      const imagenes = req.files.map(f => `/img/proyectos/${f.filename}`);
+      const imagenes = [];
+      for (const f of req.files) {
+        const ext  = path.extname(f.originalname).toLowerCase() || '.jpg';
+        const name = 'proy-' + Date.now() + '-' + Math.random().toString(36).slice(2,6) + ext;
+        const url  = await subirArchivo(f.buffer, f.mimetype, 'proyectos/' + name);
+        imagenes.push(url);
+      }
       await db.query(
         'UPDATE proyectos SET nombre=?, inmobiliaria=?, descripcion=?, ubicacion=?, area_total=?, imagen_url=?, galeria=? WHERE id=?',
         [nombre, inmobiliaria||null, descripcion||null, ubicacion||null, area_total||null, imagenes[0], JSON.stringify(imagenes), req.params.id]
@@ -115,33 +125,30 @@ router.put('/:id', requireAdmin, upload.array('imagenes', 6), async (req, res) =
     }
     res.json({ success: true, message: 'Proyecto actualizado.' });
   } catch (err) {
-    res.json({ success: false, message: 'Error.' });
+    console.error('Error editar proyecto:', err);
+    res.json({ success: false, message: 'Error: ' + err.message });
   }
 });
 
-// POST /api/proyecto/asignar — asignar lote a cliente (aparece en su lista de lotes)
+// POST /api/proyecto/asignar
 router.post('/asignar', requireAdmin, async (req, res) => {
   try {
     const { lote_id, usuario_id, cuotas_acordadas, fecha_inicio, notas } = req.body;
     if (!lote_id || !usuario_id)
       return res.json({ success: false, message: 'Lote y cliente requeridos.' });
 
-    // Verificar que el lote esté disponible
     const [lote] = await db.query("SELECT * FROM lotes WHERE id = ? AND estado = 'disponible'", [lote_id]);
     if (!lote.length)
       return res.json({ success: false, message: 'Lote no disponible.' });
 
-    // Crear la compra
     await db.query(
       `INSERT INTO compras (usuario_id, lote_id, cuotas_acordadas, fecha_inicio, notas)
        VALUES (?, ?, ?, ?, ?)`,
       [usuario_id, lote_id, cuotas_acordadas || 12, fecha_inicio || null, notas || null]
     );
-
-    // Marcar lote como vendido
     await db.query("UPDATE lotes SET estado = 'vendido' WHERE id = ?", [lote_id]);
 
-    res.json({ success: true, message: 'Lote asignado correctamente. Aparecerá en los lotes del cliente.' });
+    res.json({ success: true, message: 'Lote asignado correctamente.' });
   } catch (err) {
     console.error(err);
     res.json({ success: false, message: 'Error: ' + err.message });
