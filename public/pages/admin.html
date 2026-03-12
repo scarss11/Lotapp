@@ -1,8 +1,35 @@
 <!DOCTYPE html>
 <html lang="es"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
+<style>
+.lotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;padding:4px;}
+.lote-card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07);transition:transform .2s,box-shadow .2s;border:1px solid var(--border);}
+.lote-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12);}
+.lote-card-img{width:100%;height:160px;object-fit:cover;background:linear-gradient(135deg,#e8f4ff,#dff0ea);display:flex;align-items:center;justify-content:center;position:relative;}
+.lote-card-img img{width:100%;height:160px;object-fit:cover;}
+.lote-card-img .no-img{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
+.lote-card-img .no-img svg{width:48px;height:48px;stroke:var(--border);fill:none;stroke-width:1.5;}
+.lote-card-body{padding:0 16px 16px;}
+.lote-card-header{background:var(--blue);color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+.lote-card-header h4{font-size:1rem;font-weight:700;margin:0;}
+.lote-inmob{display:flex;align-items:center;gap:6px;color:var(--blue);font-size:12px;font-weight:700;padding:10px 0 6px;}
+.lote-inmob svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;}
+.lote-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.lote-stat{background:var(--bg);border-radius:8px;padding:8px 10px;text-align:center;}
+.lote-stat-val{font-weight:700;font-size:.9rem;}
+.lote-stat-lbl{font-size:11px;color:var(--sub);margin-top:2px;}
+.lote-ubic{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:4px;margin:6px 0;}
+.lote-precio{font-size:1.2rem;font-weight:800;color:var(--green);margin:8px 0;}
+.lote-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+.lote-actions .btn{flex:1;min-width:60px;font-size:12px;padding:7px 10px;}
+.btn-reservado{background:var(--orange)!important;color:#fff!important;cursor:not-allowed;opacity:.85;}
+.btn-vendido{background:var(--red)!important;color:#fff!important;cursor:not-allowed;opacity:.85;}
+.btn-negociacion{background:#6c63ff!important;color:#fff!important;cursor:not-allowed;opacity:.85;}
+.modal-img-preview{width:100%;max-height:400px;object-fit:contain;border-radius:10px;margin:10px 0;}
+.estado-select{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;cursor:pointer;}
+</style>
 </head>
 <body>
 <div class="app-layout">
@@ -51,18 +78,23 @@
       <div id="proyectosAdminList"><p style="color:var(--sub);">Cargando...</p></div>
     </div>
 
-    <!-- LOTES -->
+    <!-- LOTES — Vista tarjetas igual que cliente (#7) -->
     <div id="tab-lotes" class="tab-content" style="display:none;">
       <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div><h1>Lotes</h1><p>Gestión del catálogo de lotes</p></div>
         <button class="btn btn-primary" onclick="openModal('modalLote')">+ Nuevo Lote</button>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Código</th><th>Proyecto · Inmobiliaria</th><th>Área</th><th>Precio</th><th>Estado</th><th>Imagen</th><th>Acciones</th></tr></thead>
-          <tbody id="lotesAdminTable"><tr><td colspan="7" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
-        </table>
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+        <input type="text" id="adminLoteBuscar" placeholder="🔍 Buscar lote..." style="flex:1;min-width:200px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;" oninput="filtrarLotesAdmin()">
+        <select id="adminLoteEstado" onchange="filtrarLotesAdmin()" style="padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;">
+          <option value="">Todos los estados</option>
+          <option value="disponible">Disponible</option>
+          <option value="negociacion">En negociación</option>
+          <option value="reservado">Reservado</option>
+          <option value="vendido">Vendido</option>
+        </select>
       </div>
+      <div class="lotes-grid" id="lotesAdminGrid"><p style="color:var(--sub);">Cargando...</p></div>
     </div>
 
     <!-- PAGOS -->
@@ -82,13 +114,13 @@
       <div id="pqrsAdminList"><p style="color:var(--sub);">Cargando...</p></div>
     </div>
 
-    <!-- USUARIOS -->
+    <!-- USUARIOS — con botón borrar (#1) -->
     <div id="tab-usuarios" class="tab-content" style="display:none;">
       <div class="page-header"><h1>Usuarios</h1><p>Clientes registrados en la plataforma</p></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nombre</th><th>Email</th><th>Cédula</th><th>Teléfono</th><th>Rol</th><th>Registro</th></tr></thead>
-          <tbody id="usuariosTable"><tr><td colspan="6" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
+          <thead><tr><th>Nombre</th><th>Email</th><th>Cédula</th><th>Teléfono</th><th>Rol</th><th>Registro</th><th>Acciones</th></tr></thead>
+          <tbody id="usuariosTable"><tr><td colspan="7" style="text-align:center;color:var(--sub);">Cargando...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -150,6 +182,68 @@
   </div>
 </div>
 
+<!-- Modal Editar Lote (#4) -->
+<div class="modal-overlay" id="modalEditarLote">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header"><h3>Editar Lote</h3><button class="modal-close" onclick="closeModal('modalEditarLote')">×</button></div>
+    <input type="hidden" id="elId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group"><label>Área (m²)</label><input type="number" id="elArea"></div>
+      <div class="form-group"><label>Precio ($)</label><input type="number" id="elPrecio"></div>
+      <div class="form-group"><label>Estado</label>
+        <select id="elEstado">
+          <option value="disponible">✅ Disponible</option>
+          <option value="negociacion">🔵 En negociación</option>
+          <option value="reservado">🟠 Reservado</option>
+          <option value="vendido">🔴 Vendido</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Ubicación</label><input type="text" id="elUbicacion"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Descripción</label><textarea id="elDesc" rows="2"></textarea></div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Nueva imagen (opcional)</label>
+        <div class="img-upload-area" onclick="document.getElementById('elImagen').click()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p style="color:var(--sub);font-size:14px;">Click para cambiar imagen</p>
+        </div>
+        <input type="file" id="elImagen" accept="image/*" style="display:none;" onchange="previewImages(this,'elPreview',1)">
+        <div class="img-preview" id="elPreview"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditarLote')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarEdicionLote">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Asignar Lote (#4) -->
+<div class="modal-overlay" id="modalAsignar">
+  <div class="modal"><div class="modal-header"><h3>Asignar Lote a Cliente</h3><button class="modal-close" onclick="closeModal('modalAsignar')">×</button></div>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:16px;">El lote aparecerá en la lista de lotes del cliente para comprar.</p>
+    <div class="form-group"><label>Lote</label><select id="asigLote"></select></div>
+    <div class="form-group"><label>Cliente</label><select id="asigCliente"></select></div>
+    <div class="form-group"><label>Cuotas acordadas</label><input type="number" id="asigCuotas" value="12" min="1"></div>
+    <div class="form-group"><label>Fecha inicio</label><input type="date" id="asigFecha"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('modalAsignar')">Cancelar</button>
+      <button class="btn btn-primary" id="btnAsignar">Asignar Lote</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Comprobante de Pago (#2) -->
+<div class="modal-overlay" id="modalVerPago">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header"><h3>Comprobante de Pago</h3><button class="modal-close" onclick="closeModal('modalVerPago')">×</button></div>
+    <div id="verPagoInfo" style="margin-bottom:12px;font-size:14px;color:var(--sub);"></div>
+    <div id="verPagoImgWrap" style="text-align:center;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalVerPago')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Responder PQRS -->
 <div class="modal-overlay" id="modalResponder">
   <div class="modal"><div class="modal-header"><h3>Responder PQRS</h3><button class="modal-close" onclick="closeModal('modalResponder')">×</button></div>
@@ -158,22 +252,6 @@
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn btn-secondary" onclick="closeModal('modalResponder')">Cancelar</button>
       <button class="btn btn-primary" id="btnEnviarRespuesta">Enviar Respuesta</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Asignar Lote -->
-<div class="modal-overlay" id="modalAsignar">
-  <div class="modal"><div class="modal-header"><h3>Asignar Lote a Cliente</h3><button class="modal-close" onclick="closeModal('modalAsignar')">×</button></div>
-    <p style="font-size:13px;color:var(--sub);margin-bottom:16px;">El lote aparecerá en la lista de lotes del cliente para comprar.</p>
-    <div class="form-group"><label>Lote</label><select id="asigLote"></select></div>
-    <div class="form-group"><label>Cliente</label><select id="asigCliente"></select></div>
-    <div class="form-group"><label>Cuotas acordadas</label><input type="number" id="asigCuotas" value="12" min="1"></div>
-    <div class="form-group"><label>Fecha inicio</label><input type="date" id="asigFecha"></div>
-    <div class="form-group"><label>Notas</label><textarea id="asigNotas" rows="2" placeholder="Condiciones especiales..."></textarea></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
-      <button class="btn btn-secondary" onclick="closeModal('modalAsignar')">Cancelar</button>
-      <button class="btn btn-primary" id="btnAsignar">Asignar Lote</button>
     </div>
   </div>
 </div>
@@ -190,7 +268,7 @@
       <div class="form-group"><label>Área total (m²)</label><input type="number" id="epArea"></div>
       <div class="form-group" style="grid-column:1/-1;"><label>Descripción</label><textarea id="epDesc" rows="3"></textarea></div>
       <div class="form-group" style="grid-column:1/-1;">
-        <label>Nuevas imágenes (opcional, reemplaza las actuales)</label>
+        <label>Nuevas imágenes (opcional)</label>
         <div class="img-upload-area" onclick="document.getElementById('epImagenes').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           <p style="color:var(--sub);font-size:14px;">Click para cambiar imágenes</p>
@@ -206,193 +284,312 @@
   </div>
 </div>
 
+<!-- Modal Confirmar Borrar Usuario (#1) -->
+<div class="modal-overlay" id="modalConfirmarBorrar">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header"><h3>⚠️ Eliminar Usuario</h3><button class="modal-close" onclick="closeModal('modalConfirmarBorrar')">×</button></div>
+    <p style="margin-bottom:8px;">¿Estás seguro de eliminar a <strong id="borrarNombreUsuario"></strong>?</p>
+    <p style="font-size:13px;color:var(--red);">Esta acción eliminará al usuario y todos sus datos (compras, pagos, PQRS). No se puede deshacer.</p>
+    <input type="hidden" id="borrarUsuarioId">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalConfirmarBorrar')">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmarBorrar" style="background:var(--red);color:#fff;">Eliminar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container"></div>
 <script src="../js/app.js"></script>
 <script>
-let currentPqrsId=null;
+let currentPqrsId = null;
+let _lotesAdminData = [];
 
-(async()=>{
-  const u=await checkSession();
-  if(!u) return;
+(async () => {
+  const u = await checkSession();
+  if (!u) return;
   loadStats(); loadProyectosAdmin(); loadLotesAdmin(); loadPagosAdmin(); loadPqrsAdmin(); loadUsuarios();
   loadEtapasSelect();
 })();
 
 // ─── Tabs ─────────────────────────────────────────────────
-document.querySelectorAll('.tab-link').forEach(link=>{
-  link.addEventListener('click',e=>{
+document.querySelectorAll('.tab-link').forEach(link => {
+  link.addEventListener('click', e => {
     e.preventDefault();
-    document.querySelectorAll('.tab-link').forEach(l=>l.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
+    document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
     link.classList.add('active');
-    document.getElementById('tab-'+link.dataset.tab).style.display='block';
+    document.getElementById('tab-' + link.dataset.tab).style.display = 'block';
   });
 });
 
-// ─── Image preview ────────────────────────────────────────
-function previewImages(input,previewId,maxFiles=6){
-  const prev=document.getElementById(previewId); prev.innerHTML='';
-  const files=Array.from(input.files).slice(0,maxFiles);
-  files.forEach(f=>{const r=new FileReader();r.onload=e=>{const img=document.createElement('img');img.src=e.target.result;prev.appendChild(img);};r.readAsDataURL(f);});
+function previewImages(input, previewId, maxFiles = 6) {
+  const prev = document.getElementById(previewId); prev.innerHTML = '';
+  Array.from(input.files).slice(0, maxFiles).forEach(f => {
+    const r = new FileReader(); r.onload = e => { const img = document.createElement('img'); img.src = e.target.result; prev.appendChild(img); }; r.readAsDataURL(f);
+  });
 }
 
 // ─── Stats ────────────────────────────────────────────────
-async function loadStats(){
-  const d=await api('/api/proyecto/estadisticas');
-  if(!d.success)return;
-  document.getElementById('sTotal').textContent=d.stats.total_lotes;
-  document.getElementById('sDisp').textContent=d.stats.disponibles;
-  document.getElementById('sVend').textContent=d.stats.vendidos;
-  document.getElementById('sClientes').textContent=d.stats.total_clientes;
+async function loadStats() {
+  const d = await api('/api/proyecto/estadisticas');
+  if (!d.success) return;
+  document.getElementById('sTotal').textContent = d.stats.total_lotes;
+  document.getElementById('sDisp').textContent = d.stats.disponibles;
+  document.getElementById('sVend').textContent = d.stats.vendidos;
+  document.getElementById('sClientes').textContent = d.stats.total_clientes;
 }
 
 // ─── Proyectos ────────────────────────────────────────────
-async function loadProyectosAdmin(){
-  const d=await api('/api/proyecto');
-  const c=document.getElementById('proyectosAdminList');
-  if(!d.success||!d.proyectos.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin proyectos. Crea el primero.</p></div>';return;}
-  c.innerHTML=d.proyectos.map(p=>{
-    let gal=[];try{gal=JSON.parse(p.galeria||'[]');}catch(_){}
-    const etps=(d.etapas||[]).filter(e=>e.proyecto_id===p.id);
-    const img=gal[0]||p.imagen_url||'';
+async function loadProyectosAdmin() {
+  const d = await api('/api/proyecto');
+  const c = document.getElementById('proyectosAdminList');
+  if (!d.success || !d.proyectos.length) { c.innerHTML = '<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin proyectos. Crea el primero.</p></div>'; return; }
+  window._proyectosCache = d.proyectos;
+  c.innerHTML = d.proyectos.map(p => {
+    let gal = []; try { gal = JSON.parse(p.galeria || '[]'); } catch (_) {}
+    const etps = (d.etapas || []).filter(e => e.proyecto_id === p.id);
+    const img = gal[0] || p.imagen_url || '';
     return `<div class="card" style="margin-bottom:20px;">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-        ${img?`<img src="${img}" style="width:120px;height:90px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
+        ${img ? `<img src="${img}" style="width:120px;height:90px;object-fit:cover;border-radius:10px;flex-shrink:0;">` : ''}
         <div style="flex:1;min-width:200px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
             <h3 style="font-size:1.1rem;">${p.nombre}</h3>
             <button class="btn btn-sm btn-secondary" onclick="abrirEditarProyecto(${p.id})" style="font-size:12px;">✏️ Editar</button>
           </div>
-          ${p.inmobiliaria?`<p style="color:var(--blue);font-size:13px;font-weight:700;">🏢 ${p.inmobiliaria}</p>`:''}
-          ${p.ubicacion?`<p style="color:var(--sub);font-size:13px;">📍 ${p.ubicacion}</p>`:''}
-          ${p.descripcion?`<p style="color:var(--sub);font-size:13px;margin-top:4px;">${p.descripcion}</p>`:''}
+          ${p.inmobiliaria ? `<p style="color:var(--blue);font-size:13px;font-weight:700;">🏢 ${p.inmobiliaria}</p>` : ''}
+          ${p.ubicacion ? `<p style="color:var(--sub);font-size:13px;">📍 ${p.ubicacion}</p>` : ''}
+          ${p.descripcion ? `<p style="color:var(--sub);font-size:13px;margin-top:4px;">${p.descripcion}</p>` : ''}
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-            ${etps.map(e=>`${estadoBadge(e.estado)} <span style="font-size:12px;">${e.nombre}</span>`).join(' · ')}
+            ${etps.map(e => `${estadoBadge(e.estado)} <span style="font-size:12px;">${e.nombre}</span>`).join(' · ')}
           </div>
         </div>
       </div>
     </div>`;
   }).join('');
 }
-window._proyectosCache=null;
-async function abrirEditarProyecto(id){
-  if(!window._proyectosCache){const d=await api('/api/proyecto');window._proyectosCache=d.proyectos||[];}
-  const p=window._proyectosCache.find(x=>x.id===id);
-  if(!p)return;
-  document.getElementById('epId').value=p.id;
-  document.getElementById('epNombre').value=p.nombre||'';
-  document.getElementById('epInmobiliaria').value=p.inmobiliaria||'';
-  document.getElementById('epUbicacion').value=p.ubicacion||'';
-  document.getElementById('epArea').value=p.area_total||'';
-  document.getElementById('epDesc').value=p.descripcion||'';
-  document.getElementById('epPreview').innerHTML='';
+
+async function abrirEditarProyecto(id) {
+  if (!window._proyectosCache) { const d = await api('/api/proyecto'); window._proyectosCache = d.proyectos || []; }
+  const p = window._proyectosCache.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('epId').value = p.id;
+  document.getElementById('epNombre').value = p.nombre || '';
+  document.getElementById('epInmobiliaria').value = p.inmobiliaria || '';
+  document.getElementById('epUbicacion').value = p.ubicacion || '';
+  document.getElementById('epArea').value = p.area_total || '';
+  document.getElementById('epDesc').value = p.descripcion || '';
+  document.getElementById('epPreview').innerHTML = '';
   openModal('modalEditarProyecto');
 }
 
-document.getElementById('btnGuardarProyecto').addEventListener('click',async()=>{
-  const nombre=document.getElementById('pNombre').value.trim();
-  const inmobiliaria=document.getElementById('pInmobiliaria').value.trim();
-  if(!nombre||!inmobiliaria){showToast('Nombre e inmobiliaria son obligatorios','warning');return;}
-  const fd=new FormData();
-  fd.append('nombre',nombre); fd.append('inmobiliaria',inmobiliaria);
-  fd.append('descripcion',document.getElementById('pDesc').value);
-  fd.append('ubicacion',document.getElementById('pUbicacion').value);
-  fd.append('area_total',document.getElementById('pArea').value);
-  const imgs=document.getElementById('pImagenes').files;
-  for(let i=0;i<imgs.length;i++) fd.append('imagenes',imgs[i]);
-  const d=await api('/api/proyecto','POST',fd,true);
-  if(d.success){window._proyectosCache=null;showToast('Proyecto creado','success');closeModal('modalProyecto');loadProyectosAdmin();loadEtapasSelect();}
-  else showToast(d.message||'Error','error');
+document.getElementById('btnGuardarProyecto').addEventListener('click', async () => {
+  const nombre = document.getElementById('pNombre').value.trim();
+  const inmobiliaria = document.getElementById('pInmobiliaria').value.trim();
+  if (!nombre || !inmobiliaria) { showToast('Nombre e inmobiliaria son obligatorios', 'warning'); return; }
+  const fd = new FormData();
+  fd.append('nombre', nombre); fd.append('inmobiliaria', inmobiliaria);
+  fd.append('descripcion', document.getElementById('pDesc').value);
+  fd.append('ubicacion', document.getElementById('pUbicacion').value);
+  fd.append('area_total', document.getElementById('pArea').value);
+  const imgs = document.getElementById('pImagenes').files;
+  for (let i = 0; i < imgs.length; i++) fd.append('imagenes', imgs[i]);
+  const d = await api('/api/proyecto', 'POST', fd, true);
+  if (d.success) { window._proyectosCache = null; showToast('Proyecto creado', 'success'); closeModal('modalProyecto'); loadProyectosAdmin(); loadEtapasSelect(); }
+  else showToast(d.message || 'Error', 'error');
 });
 
-// ─── Lotes ────────────────────────────────────────────────
-async function loadLotesAdmin(){
-  const d=await api('/api/lotes');
-  const tb=document.getElementById('lotesAdminTable');
-  if(!d.success||!d.lotes.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin lotes</td></tr>';return;}
-  tb.innerHTML=d.lotes.map(l=>`<tr>
-    <td><strong>${l.codigo}</strong></td>
-    <td style="font-size:13px;">${l.proyecto_nombre||'—'}${l.proyecto_inmobiliaria?` <span style="color:var(--sub);">· ${l.proyecto_inmobiliaria}</span>`:''}</td>
-    <td>${l.area_m2} m²</td>
-    <td>${formatCOP(l.precio)}</td>
-    <td>${estadoBadge(l.estado)}</td>
-    <td>${l.imagen_url?`<img src="${l.imagen_url}" style="width:48px;height:36px;object-fit:cover;border-radius:6px;">`:'—'}</td>
-    <td><button class="btn btn-sm btn-primary" onclick="abrirAsignar(${l.id},'${l.codigo}')">Asignar</button></td>
-  </tr>`).join('');
+document.getElementById('btnGuardarEdicionProyecto').addEventListener('click', async () => {
+  const id = document.getElementById('epId').value;
+  const nombre = document.getElementById('epNombre').value.trim();
+  const inmobiliaria = document.getElementById('epInmobiliaria').value.trim();
+  if (!nombre || !inmobiliaria) { showToast('Nombre e inmobiliaria son obligatorios', 'warning'); return; }
+  const fd = new FormData();
+  fd.append('nombre', nombre); fd.append('inmobiliaria', inmobiliaria);
+  fd.append('descripcion', document.getElementById('epDesc').value);
+  fd.append('ubicacion', document.getElementById('epUbicacion').value);
+  fd.append('area_total', document.getElementById('epArea').value);
+  const imgs = document.getElementById('epImagenes').files;
+  for (let i = 0; i < imgs.length; i++) fd.append('imagenes', imgs[i]);
+  const d = await api(`/api/proyecto/${id}`, 'PUT', fd, true);
+  if (d.success) { window._proyectosCache = null; showToast('Proyecto actualizado', 'success'); closeModal('modalEditarProyecto'); loadProyectosAdmin(); }
+  else showToast(d.message || 'Error', 'error');
+});
+
+// ─── Lotes Admin — vista tarjetas (#7) ────────────────────
+async function loadLotesAdmin() {
+  const d = await api('/api/lotes');
+  if (!d.success) return;
+  _lotesAdminData = d.lotes || [];
+  renderLotesAdmin(_lotesAdminData);
 }
 
-async function loadEtapasSelect(){
-  const d=await api('/api/proyecto');
-  const sel=document.getElementById('lEtapa');
-  if(!d.success){sel.innerHTML='<option value="">Sin proyectos</option>';return;}
-  sel.innerHTML='<option value="">Seleccionar etapa...</option>'+d.etapas.map(e=>{
-    const p=d.proyectos.find(x=>x.id===e.proyecto_id);
-    return `<option value="${e.id}">${p?p.nombre+' → ':''} ${e.nombre}</option>`;
+function filtrarLotesAdmin() {
+  const q = document.getElementById('adminLoteBuscar').value.toLowerCase();
+  const est = document.getElementById('adminLoteEstado').value;
+  const filtrados = _lotesAdminData.filter(l =>
+    (!q || l.codigo.toLowerCase().includes(q) || (l.proyecto_nombre || '').toLowerCase().includes(q) || (l.ubicacion || '').toLowerCase().includes(q)) &&
+    (!est || l.estado === est)
+  );
+  renderLotesAdmin(filtrados);
+}
+
+function renderLotesAdmin(lotes) {
+  const grid = document.getElementById('lotesAdminGrid');
+  if (!lotes.length) { grid.innerHTML = '<p style="color:var(--sub);">Sin lotes que mostrar.</p>'; return; }
+  grid.innerHTML = lotes.map(l => {
+    // Imagen: primero la del lote, luego la del proyecto (#8)
+    const imgSrc = l.imagen_url || l.proyecto_imagen_url || '';
+    const imgHtml = imgSrc
+      ? `<img src="${imgSrc}" alt="${l.codigo}" style="width:100%;height:160px;object-fit:cover;">`
+      : `<div class="no-img"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>`;
+
+    // Colores del botón según estado (#6)
+    let btnClass = 'btn-primary';
+    let btnTxt = 'Me interesa';
+    if (l.estado === 'reservado')   { btnClass = 'btn-reservado';   btnTxt = 'Reservado'; }
+    if (l.estado === 'vendido')     { btnClass = 'btn-vendido';     btnTxt = 'Vendido'; }
+    if (l.estado === 'negociacion') { btnClass = 'btn-negociacion'; btnTxt = 'En negociación'; }
+
+    // Color header según estado
+    const headerColor = l.estado === 'vendido' ? '#ef4444' : l.estado === 'reservado' ? '#f97316' : l.estado === 'negociacion' ? '#6c63ff' : 'var(--blue)';
+
+    return `<div class="lote-card">
+      <div class="lote-card-img">${imgHtml}</div>
+      <div class="lote-card-header" style="background:${headerColor};">
+        <h4>${l.codigo}</h4>
+        ${estadoBadge(l.estado)}
+      </div>
+      <div class="lote-card-body">
+        <div class="lote-inmob">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          ${l.proyecto_nombre || '—'}${l.proyecto_inmobiliaria ? ` · ${l.proyecto_inmobiliaria}` : ''}
+        </div>
+        <div class="lote-stats">
+          <div class="lote-stat"><div class="lote-stat-val">${l.area_m2} m²</div><div class="lote-stat-lbl">Área</div></div>
+          <div class="lote-stat"><div class="lote-stat-val">${l.etapa_nombre || '—'}</div><div class="lote-stat-lbl">Etapa</div></div>
+        </div>
+        ${l.ubicacion ? `<div class="lote-ubic">📍 ${l.ubicacion}</div>` : ''}
+        <div class="lote-precio">${formatCOP(l.precio)}</div>
+        <div class="lote-actions">
+          <button class="btn ${btnClass}" onclick="abrirAsignar(${l.id},'${l.codigo}')" ${l.estado !== 'disponible' ? 'disabled' : ''} style="${l.estado !== 'disponible' ? 'cursor:not-allowed;' : ''}">
+            📋 Asignar
+          </button>
+          <button class="btn btn-secondary" onclick="abrirEditarLote(${l.id})">✏️ Editar</button>
+        </div>
+        <!-- Cambio rápido de estado (#3) -->
+        <div style="margin-top:8px;">
+          <select class="estado-select" style="width:100%;" onchange="cambiarEstadoLote(${l.id}, this.value, this)">
+            <option value="disponible"   ${l.estado==='disponible'   ? 'selected':''}>✅ Disponible</option>
+            <option value="negociacion"  ${l.estado==='negociacion'  ? 'selected':''}>🔵 Negociación</option>
+            <option value="reservado"    ${l.estado==='reservado'    ? 'selected':''}>🟠 Reservado</option>
+            <option value="vendido"      ${l.estado==='vendido'      ? 'selected':''}>🔴 Vendido</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-document.getElementById('btnGuardarLote').addEventListener('click',async()=>{
-  const fd=new FormData();
-  fd.append('codigo',document.getElementById('lCodigo').value);
-  fd.append('etapa_id',document.getElementById('lEtapa').value);
-  fd.append('area_m2',document.getElementById('lArea').value);
-  fd.append('precio',document.getElementById('lPrecio').value);
-  fd.append('ubicacion',document.getElementById('lUbicacion').value);
-  fd.append('descripcion',document.getElementById('lDesc').value);
-  const img=document.getElementById('lImagen').files[0];
-  if(img) fd.append('imagen',img);
-  const d=await api('/api/lotes','POST',fd,true);
-  if(d.success){showToast('Lote creado correctamente','success');closeModal('modalLote');loadLotesAdmin();}
-  else showToast(d.message||'Error creando lote','error');
+// Cambio rápido de estado desde tarjeta (#3)
+async function cambiarEstadoLote(id, estado, selectEl) {
+  const d = await api(`/api/lotes/${id}/estado`, 'PATCH', { estado });
+  if (d.success) {
+    showToast(`Estado → ${estado}`, 'success');
+    // Actualizar dato local sin recargar todo
+    const lote = _lotesAdminData.find(l => l.id === id);
+    if (lote) lote.estado = estado;
+    renderLotesAdmin(_lotesAdminData);
+  } else {
+    showToast(d.message || 'Error', 'error');
+    // Revertir select
+    selectEl.value = _lotesAdminData.find(l => l.id === id)?.estado || 'disponible';
+  }
+}
+
+// Editar lote — abre modal con datos (#4)
+async function abrirEditarLote(id) {
+  const lote = _lotesAdminData.find(l => l.id === id);
+  if (!lote) return;
+  document.getElementById('elId').value = lote.id;
+  document.getElementById('elArea').value = lote.area_m2 || '';
+  document.getElementById('elPrecio').value = lote.precio || '';
+  document.getElementById('elEstado').value = lote.estado || 'disponible';
+  document.getElementById('elUbicacion').value = lote.ubicacion || '';
+  document.getElementById('elDesc').value = lote.descripcion || '';
+  document.getElementById('elPreview').innerHTML = lote.imagen_url
+    ? `<img src="${lote.imagen_url}" style="max-height:80px;border-radius:8px;">` : '';
+  openModal('modalEditarLote');
+}
+
+document.getElementById('btnGuardarEdicionLote').addEventListener('click', async () => {
+  const id = document.getElementById('elId').value;
+  const fd = new FormData();
+  fd.append('estado', document.getElementById('elEstado').value);
+  fd.append('precio', document.getElementById('elPrecio').value);
+  fd.append('descripcion', document.getElementById('elDesc').value);
+  fd.append('ubicacion', document.getElementById('elUbicacion').value);
+  fd.append('area_m2', document.getElementById('elArea').value);
+  const img = document.getElementById('elImagen').files[0];
+  if (img) fd.append('imagen', img);
+  const d = await api(`/api/lotes/${id}`, 'PUT', fd, true);
+  if (d.success) { showToast('Lote actualizado', 'success'); closeModal('modalEditarLote'); loadLotesAdmin(); }
+  else showToast(d.message || 'Error', 'error');
 });
 
-// ─── Asignar lote ─────────────────────────────────────────
-async function abrirAsignar(loteId,loteCod){
-  const du=await api('/api/proyecto/usuarios');
-  const selL=document.getElementById('asigLote');
-  const selC=document.getElementById('asigCliente');
-  selL.innerHTML=`<option value="${loteId}">${loteCod}</option>`;
-  selC.innerHTML=du.success?du.usuarios.filter(u=>u.rol==='cliente').map(u=>`<option value="${u.id}">${u.nombre} ${u.apellido}</option>`).join(''):'<option>Sin clientes</option>';
-  document.getElementById('asigFecha').value=new Date().toISOString().slice(0,10);
+async function loadEtapasSelect() {
+  const d = await api('/api/proyecto');
+  const sel = document.getElementById('lEtapa');
+  if (!d.success) { sel.innerHTML = '<option value="">Sin proyectos</option>'; return; }
+  sel.innerHTML = '<option value="">Seleccionar etapa...</option>' + d.etapas.map(e => {
+    const p = d.proyectos.find(x => x.id === e.proyecto_id);
+    return `<option value="${e.id}">${p ? p.nombre + ' → ' : ''}${e.nombre}</option>`;
+  }).join('');
+}
+
+document.getElementById('btnGuardarLote').addEventListener('click', async () => {
+  const fd = new FormData();
+  fd.append('codigo', document.getElementById('lCodigo').value);
+  fd.append('etapa_id', document.getElementById('lEtapa').value);
+  fd.append('area_m2', document.getElementById('lArea').value);
+  fd.append('precio', document.getElementById('lPrecio').value);
+  fd.append('ubicacion', document.getElementById('lUbicacion').value);
+  fd.append('descripcion', document.getElementById('lDesc').value);
+  const img = document.getElementById('lImagen').files[0];
+  if (img) fd.append('imagen', img);
+  const d = await api('/api/lotes', 'POST', fd, true);
+  if (d.success) { showToast('Lote creado correctamente', 'success'); closeModal('modalLote'); loadLotesAdmin(); }
+  else showToast(d.message || 'Error creando lote', 'error');
+});
+
+// ─── Asignar lote (#4) ────────────────────────────────────
+async function abrirAsignar(loteId, loteCod) {
+  const du = await api('/api/proyecto/usuarios');
+  const selL = document.getElementById('asigLote');
+  const selC = document.getElementById('asigCliente');
+  selL.innerHTML = `<option value="${loteId}">${loteCod}</option>`;
+  selC.innerHTML = du.success ? du.usuarios.filter(u => u.rol === 'cliente').map(u => `<option value="${u.id}">${u.nombre} ${u.apellido}</option>`).join('') : '<option>Sin clientes</option>';
+  document.getElementById('asigFecha').value = new Date().toISOString().slice(0, 10);
   openModal('modalAsignar');
 }
-document.getElementById('btnAsignar').addEventListener('click',async()=>{
-  const d=await api('/api/proyecto/asignar','POST',{
-    lote_id:document.getElementById('asigLote').value,
-    usuario_id:document.getElementById('asigCliente').value,
-    cuotas_acordadas:document.getElementById('asigCuotas').value,
-    fecha_inicio:document.getElementById('asigFecha').value,
-    notas:document.getElementById('asigNotas').value
+
+document.getElementById('btnAsignar').addEventListener('click', async () => {
+  const d = await api('/api/pagos/compra', 'POST', {
+    lote_id: document.getElementById('asigLote').value,
+    usuario_id: document.getElementById('asigCliente').value,
+    cuotas: document.getElementById('asigCuotas').value,
+    fecha_inicio: document.getElementById('asigFecha').value
   });
-  if(d.success){showToast('✅ Lote asignado — aparece en lotes del cliente','success');closeModal('modalAsignar');loadLotesAdmin();}
-  else showToast(d.message||'Error','error');
+  if (d.success) { showToast('✅ Lote asignado al cliente', 'success'); closeModal('modalAsignar'); loadLotesAdmin(); }
+  else showToast(d.message || 'Error', 'error');
 });
 
-// ─── Editar Proyecto ──────────────────────────────────────
-
-document.getElementById('btnGuardarEdicionProyecto').addEventListener('click',async()=>{
-  const id=document.getElementById('epId').value;
-  const nombre=document.getElementById('epNombre').value.trim();
-  const inmobiliaria=document.getElementById('epInmobiliaria').value.trim();
-  if(!nombre||!inmobiliaria){showToast('Nombre e inmobiliaria son obligatorios','warning');return;}
-  const fd=new FormData();
-  fd.append('nombre',nombre); fd.append('inmobiliaria',inmobiliaria);
-  fd.append('descripcion',document.getElementById('epDesc').value);
-  fd.append('ubicacion',document.getElementById('epUbicacion').value);
-  fd.append('area_total',document.getElementById('epArea').value);
-  const imgs=document.getElementById('epImagenes').files;
-  for(let i=0;i<imgs.length;i++) fd.append('imagenes',imgs[i]);
-  const d=await api(`/api/proyecto/${id}`,'PUT',fd,true);
-  if(d.success){window._proyectosCache=null;showToast('Proyecto actualizado','success');closeModal('modalEditarProyecto');loadProyectosAdmin();}
-  else showToast(d.message||'Error','error');
-});
-
-// ─── Pagos ────────────────────────────────────────────────
-async function loadPagosAdmin(){
-  const d=await api('/api/pagos/todos');
-  const tb=document.getElementById('pagosAdminTable');
-  if(!d.success||!d.pagos.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin pagos</td></tr>';return;}
-  tb.innerHTML=d.pagos.map(p=>`<tr>
+// ─── Pagos Admin — con modal Ver comprobante (#2) ─────────
+async function loadPagosAdmin() {
+  const d = await api('/api/pagos/todos');
+  const tb = document.getElementById('pagosAdminTable');
+  if (!d.success || !d.pagos.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:32px;">Sin pagos</td></tr>'; return; }
+  tb.innerHTML = d.pagos.map(p => `<tr>
     <td>${p.nombre} ${p.apellido}</td>
     <td>${p.lote_codigo}</td>
     <td><strong style="color:var(--green);">${formatCOP(p.monto)}</strong></td>
@@ -400,61 +597,108 @@ async function loadPagosAdmin(){
     <td>${estadoBadge(p.estado)}</td>
     <td>${formatDate(p.fecha_pago)}</td>
     <td style="display:flex;gap:6px;flex-wrap:wrap;">
-      ${p.estado==='pendiente'?`
+      ${p.estado === 'pendiente' ? `
         <button class="btn btn-sm btn-success" onclick="cambiarEstadoPago(${p.id},'aprobado')">✓</button>
-        <button class="btn btn-sm btn-danger" onclick="cambiarEstadoPago(${p.id},'rechazado')">✗</button>`:'—'}
-      ${p.comprobante_url?`<a href="${p.comprobante_url}" target="_blank" class="btn btn-sm btn-secondary">Ver</a>`:''}
+        <button class="btn btn-sm btn-danger" onclick="cambiarEstadoPago(${p.id},'rechazado')" style="background:var(--red);color:#fff;">✗</button>` : ''}
+      <button class="btn btn-sm btn-secondary" onclick="verComprobante('${p.comprobante_url || ''}','${p.nombre} ${p.apellido}','${p.lote_codigo}','${formatCOP(p.monto)}')">👁 Ver</button>
     </td>
   </tr>`).join('');
 }
-async function cambiarEstadoPago(id,estado){
-  const d=await api(`/api/pagos/${id}/estado`,'PUT',{estado});
-  if(d.success){showToast(`Pago ${estado}`,'success');loadPagosAdmin();}
-  else showToast(d.message,'error');
+
+// Modal ver comprobante (#2)
+function verComprobante(url, cliente, lote, monto) {
+  document.getElementById('verPagoInfo').innerHTML = `<b>Cliente:</b> ${cliente} &nbsp;·&nbsp; <b>Lote:</b> ${lote} &nbsp;·&nbsp; <b>Monto:</b> ${monto}`;
+  const wrap = document.getElementById('verPagoImgWrap');
+  if (url) {
+    // Detectar si es imagen o PDF
+    const esImagen = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
+    if (esImagen) {
+      wrap.innerHTML = `<img src="${url}" class="modal-img-preview" alt="Comprobante"><br><a href="${url}" target="_blank" class="btn btn-secondary" style="margin-top:8px;">🔗 Abrir en nueva pestaña</a>`;
+    } else {
+      wrap.innerHTML = `<div style="padding:24px;text-align:center;background:var(--bg);border-radius:10px;">
+        <svg viewBox="0 0 24 24" style="width:48px;stroke:var(--red);fill:none;stroke-width:1.5;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p style="margin:12px 0 8px;font-weight:600;">Archivo adjunto</p>
+        <a href="${url}" target="_blank" class="btn btn-primary">📎 Abrir comprobante</a>
+      </div>`;
+    }
+  } else {
+    wrap.innerHTML = `<div style="padding:32px;text-align:center;color:var(--sub);">
+      <svg viewBox="0 0 24 24" style="width:48px;stroke:var(--border);fill:none;stroke-width:1.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <p style="margin-top:12px;">Sin comprobante adjunto</p>
+    </div>`;
+  }
+  openModal('modalVerPago');
+}
+
+async function cambiarEstadoPago(id, estado) {
+  const d = await api(`/api/pagos/${id}/estado`, 'PUT', { estado });
+  if (d.success) { showToast(`Pago ${estado}`, 'success'); loadPagosAdmin(); }
+  else showToast(d.message, 'error');
 }
 
 // ─── PQRS Admin ───────────────────────────────────────────
-async function loadPqrsAdmin(){
-  const d=await api('/api/pqrs/todas');
-  const c=document.getElementById('pqrsAdminList');
-  if(!d.success||!d.pqrs.length){c.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin PQRS</p></div>';return;}
-  c.innerHTML=d.pqrs.map(p=>`
+async function loadPqrsAdmin() {
+  const d = await api('/api/pqrs/todas');
+  const c = document.getElementById('pqrsAdminList');
+  if (!d.success || !d.pqrs.length) { c.innerHTML = '<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">Sin PQRS</p></div>'; return; }
+  c.innerHTML = d.pqrs.map(p => `
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
       <div><strong>${p.asunto}</strong> <span style="font-size:12px;color:var(--sub);">${p.tipo} · ${p.nombre} ${p.apellido}</span></div>
       <div style="display:flex;gap:8px;align-items:center;">${estadoBadge(p.estado)}
-        ${p.estado!=='cerrada'?`<button class="btn btn-sm btn-primary" onclick="abrirResponder(${p.id},'${p.asunto.replace(/'/g,"\\'")}','${p.descripcion.replace(/'/g,"\\'")}')">Responder</button>`:''}
+        ${p.estado !== 'cerrada' ? `<button class="btn btn-sm btn-primary" onclick="abrirResponder(${p.id},'${p.asunto.replace(/'/g, "\\'")}','${p.descripcion.replace(/'/g, "\\'")}')">Responder</button>` : ''}
       </div>
     </div>
     <p style="color:var(--sub);font-size:13px;">${p.descripcion}</p>
-    ${p.respuesta?`<div style="background:rgba(52,199,89,.08);border-left:3px solid var(--green);padding:8px 12px;border-radius:8px;margin-top:8px;font-size:13px;"><strong>Respuesta:</strong> ${p.respuesta}</div>`:''}
+    ${p.respuesta ? `<div style="background:rgba(52,199,89,.08);border-left:3px solid var(--green);padding:8px 12px;border-radius:8px;margin-top:8px;font-size:13px;"><strong>Respuesta:</strong> ${p.respuesta}</div>` : ''}
   </div>`).join('');
 }
-function abrirResponder(id,asunto,desc){
-  currentPqrsId=id;
-  document.getElementById('pqrsDetalleAdmin').innerHTML=`<strong>${asunto}</strong><br><span style="color:var(--sub);">${desc}</span>`;
-  document.getElementById('respuestaTexto').value='';
+
+function abrirResponder(id, asunto, desc) {
+  currentPqrsId = id;
+  document.getElementById('pqrsDetalleAdmin').innerHTML = `<strong>${asunto}</strong><br><span style="color:var(--sub);">${desc}</span>`;
+  document.getElementById('respuestaTexto').value = '';
   openModal('modalResponder');
 }
-document.getElementById('btnEnviarRespuesta').addEventListener('click',async()=>{
-  const resp=document.getElementById('respuestaTexto').value.trim();
-  if(!resp){showToast('Escribe una respuesta','warning');return;}
-  const d=await api(`/api/pqrs/${currentPqrsId}/responder`,'PUT',{respuesta:resp});
-  if(d.success){showToast('Respuesta enviada','success');closeModal('modalResponder');loadPqrsAdmin();}
-  else showToast(d.message,'error');
+
+document.getElementById('btnEnviarRespuesta').addEventListener('click', async () => {
+  const resp = document.getElementById('respuestaTexto').value.trim();
+  if (!resp) { showToast('Escribe una respuesta', 'warning'); return; }
+  const d = await api(`/api/pqrs/${currentPqrsId}/responder`, 'PUT', { respuesta: resp });
+  if (d.success) { showToast('Respuesta enviada', 'success'); closeModal('modalResponder'); loadPqrsAdmin(); }
+  else showToast(d.message, 'error');
 });
 
-// ─── Usuarios ─────────────────────────────────────────────
-async function loadUsuarios(){
-  const d=await api('/api/proyecto/usuarios');
-  const tb=document.getElementById('usuariosTable');
-  if(!d.success||!d.usuarios.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--sub);padding:24px;">Sin usuarios</td></tr>';return;}
-  tb.innerHTML=d.usuarios.map(u=>`<tr>
+// ─── Usuarios — con botón borrar (#1) ────────────────────
+async function loadUsuarios() {
+  const d = await api('/api/proyecto/usuarios');
+  const tb = document.getElementById('usuariosTable');
+  if (!d.success || !d.usuarios.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:24px;">Sin usuarios</td></tr>'; return; }
+  tb.innerHTML = d.usuarios.map(u => `<tr>
     <td><strong>${u.nombre} ${u.apellido}</strong></td>
-    <td>${u.email}</td><td>${u.cedula||'—'}</td><td>${u.telefono||'—'}</td>
-    <td>${estadoBadge(u.rol)}</td><td>${formatDate(u.created_at)}</td>
+    <td>${u.email}</td>
+    <td>${u.cedula || '—'}</td>
+    <td>${u.telefono || '—'}</td>
+    <td>${estadoBadge(u.rol)}</td>
+    <td>${formatDate(u.created_at)}</td>
+    <td>
+      ${u.rol !== 'admin' ? `<button class="btn btn-sm btn-danger" style="background:var(--red);color:#fff;" onclick="confirmarBorrarUsuario(${u.id},'${u.nombre} ${u.apellido}')">🗑 Borrar</button>` : '<span style="color:var(--sub);font-size:12px;">Admin</span>'}
+    </td>
   </tr>`).join('');
 }
+
+function confirmarBorrarUsuario(id, nombre) {
+  document.getElementById('borrarUsuarioId').value = id;
+  document.getElementById('borrarNombreUsuario').textContent = nombre;
+  openModal('modalConfirmarBorrar');
+}
+
+document.getElementById('btnConfirmarBorrar').addEventListener('click', async () => {
+  const id = document.getElementById('borrarUsuarioId').value;
+  const d = await api(`/api/auth/usuarios/${id}`, 'DELETE');
+  if (d.success) { showToast('Usuario eliminado', 'success'); closeModal('modalConfirmarBorrar'); loadUsuarios(); }
+  else showToast(d.message || 'Error al eliminar', 'error');
+});
 </script>
 </body>
 </html>

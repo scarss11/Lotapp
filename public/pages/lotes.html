@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"><meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lotes — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
@@ -60,10 +60,25 @@ async function loadLotes(){
   let lotes=d.lotes;
   if(q) lotes=lotes.filter(l=>l.codigo.toLowerCase().includes(q)||l.ubicacion?.toLowerCase().includes(q)||l.proyecto_nombre?.toLowerCase().includes(q));
   if(!lotes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--sub);"><p style="font-size:2rem;">🏗️</p><p>Sin lotes que coincidan</p></div>';return;}
-  grid.innerHTML=lotes.map(l=>`
-  <div class="lote-card">
-    ${l.imagen_url?`<img src="${l.imagen_url}" class="lote-img" alt="Lote ${l.codigo}">`:`
-    <div class="lote-img-placeholder"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>`}
+  grid.innerHTML=lotes.map(l=>{
+    // Imagen: lote primero, si no la del proyecto (#8)
+    const imgSrc = l.imagen_url || l.proyecto_imagen_url || '';
+    const imgHtml = imgSrc
+      ? `<img src="${imgSrc}" class="lote-img" alt="Lote ${l.codigo}">`
+      : `<div class="lote-img-placeholder"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>`;
+    // Botón con colores según estado (#6)
+    let btnHtml = '';
+    if (l.estado === 'disponible') {
+      btnHtml = `<button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="interesat('${l.codigo}')">Me interesa</button>`;
+    } else if (l.estado === 'reservado') {
+      btnHtml = `<button class="btn" style="width:100%;justify-content:center;background:var(--orange);color:#fff;cursor:not-allowed;" disabled>Reservado</button>`;
+    } else if (l.estado === 'vendido') {
+      btnHtml = `<button class="btn" style="width:100%;justify-content:center;background:var(--red);color:#fff;cursor:not-allowed;" disabled>Vendido</button>`;
+    } else if (l.estado === 'negociacion') {
+      btnHtml = `<button class="btn" style="width:100%;justify-content:center;background:#6c63ff;color:#fff;cursor:not-allowed;" disabled>En negociación</button>`;
+    }
+    return `<div class="lote-card">
+    ${imgHtml}
     <div class="lote-header">
       <span class="lote-code">Lote ${l.codigo}</span>
       <span class="lote-estado ${l.estado}">${l.estado}</span>
@@ -76,9 +91,10 @@ async function loadLotes(){
       </div>
       ${l.ubicacion?`<p style="font-size:13px;color:var(--sub);margin-bottom:8px;">📍 ${l.ubicacion}</p>`:''}
       <div class="lote-price">${formatCOP(l.precio)}</div>
-      ${l.estado==='disponible'?`<button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="interesat('${l.codigo}')">Me interesa</button>`:`<button class="btn" style="width:100%;justify-content:center;background:var(--bg);color:var(--sub);cursor:default;">${l.estado==='vendido'?'Vendido':'Reservado'}</button>`}
+      ${btnHtml}
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
 }
 function interesat(cod){showToast(`¡Interés registrado en Lote ${cod}! Un asesor te contactará.`,'success');}
 </script>

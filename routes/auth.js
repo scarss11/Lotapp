@@ -3,7 +3,7 @@ const router   = express.Router();
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const db       = require('../config/db');
-const { enviarResetPassword } = require('../config/email');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.SESSION_SECRET || 'lotesapp_jwt_secret_2024';
 
@@ -16,38 +16,31 @@ function setAuthCookie(res, usuario) {
   );
   res.cookie('auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure:   process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+    maxAge:   7 * 24 * 60 * 60 * 1000
   });
+  return token;
 }
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password)
-      return res.json({ success: false, message: 'Email y contraseña requeridos.' });
-
     const [rows] = await db.query('SELECT * FROM usuarios WHERE email = $1', [email.toLowerCase().trim()]);
-    if (!rows.length)
-      return res.json({ success: false, message: 'Credenciales incorrectas.' });
-
+    if (!rows.length) return res.json({ success: false, message: 'Credenciales incorrectas.' });
     const usuario = rows[0];
     const match = await bcrypt.compare(password, usuario.password);
-    if (!match)
-      return res.json({ success: false, message: 'Credenciales incorrectas.' });
-
+    if (!match) return res.json({ success: false, message: 'Credenciales incorrectas.' });
     setAuthCookie(res, usuario);
-
     res.json({
       success: true,
-      nombre: usuario.nombre,
-      rol:    usuario.rol,
+      nombre:  usuario.nombre,
+      rol:     usuario.rol,
       redirect: usuario.rol === 'admin' ? '/admin' : '/dashboard'
     });
   } catch (err) {
-    console.error('Login error:', err);
+    console.error(err);
     res.json({ success: false, message: 'Error del servidor.' });
   }
 });
@@ -56,26 +49,17 @@ router.post('/login', async (req, res) => {
 router.post('/registro', async (req, res) => {
   try {
     const { nombre, apellido, email, cedula, telefono, password } = req.body;
-    if (!nombre || !email || !password)
-      return res.json({ success: false, message: 'Campos requeridos incompletos.' });
-
     const [existe] = await db.query('SELECT id FROM usuarios WHERE email = $1', [email.toLowerCase().trim()]);
-    if (existe.length)
-      return res.json({ success: false, message: 'El correo ya está registrado.' });
-
+    if (existe.length) return res.json({ success: false, message: 'El email ya está registrado.' });
     const hash = await bcrypt.hash(password, 10);
-    const [result] = await db.query(
+    await db.query(
       `INSERT INTO usuarios (nombre, apellido, email, cedula, telefono, password, rol, email_verificado)
-       VALUES ($1,$2,$3,$4,$5,$6,'cliente',true) RETURNING id`,
-      [nombre, apellido, email.toLowerCase().trim(), cedula||null, telefono||null, hash]
+       VALUES ($1, $2, $3, $4, $5, $6, 'cliente', false)`,
+      [nombre, apellido, email.toLowerCase().trim(), cedula || null, telefono || null, hash]
     );
-
-    const nuevoUsuario = { id: result[0].id, nombre, apellido, email: email.toLowerCase().trim(), rol: 'cliente' };
-    setAuthCookie(res, nuevoUsuario);
-
-    res.json({ success: true, nombre, rol: 'cliente', redirect: '/dashboard' });
+    res.json({ success: true, message: 'Cuenta creada. Inicia sesión.' });
   } catch (err) {
-    console.error('Registro error:', err);
+    console.error(err);
     res.json({ success: false, message: 'Error al registrar.' });
   }
 });
@@ -86,27 +70,35 @@ router.post('/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// GET /api/me
+router.get('/me', (req, res) => {
+  try {
+    const token = req.cookies?.auth_token;
+    if (!token) return res.json({ success: false });
+    const user = jwt.verify(token, JWT_SECRET);
+    res.json({ success: true, usuario: user });
+  } catch {
+    res.json({ success: false });
+  }
+});
+
 // POST /api/auth/reset-solicitud
 router.post('/reset-solicitud', async (req, res) => {
   try {
     const { email } = req.body;
     const [rows] = await db.query('SELECT * FROM usuarios WHERE email = $1', [email?.toLowerCase().trim()]);
-    if (!rows.length) return res.json({ success: true, message: 'Si el correo existe, recibirás instrucciones.' });
-
-    const { v4: uuidv4 } = require('uuid');
-    const token  = uuidv4();
+    if (!rows.length) return res.json({ success: true, message: 'Si el email existe, recibirás instrucciones.' });
+    const token = require('crypto').randomBytes(32).toString('hex');
     const expira = new Date(Date.now() + 3600000);
-
     await db.query(
       `INSERT INTO reset_tokens (usuario_id, token, expira_en)
-       VALUES ($1,$2,$3)
+       VALUES ($1, $2, $3)
        ON CONFLICT (usuario_id) DO UPDATE SET token=$2, expira_en=$3`,
       [rows[0].id, token, expira]
     );
-
-    try { await enviarResetPassword(email, token); } catch (_) {}
-    res.json({ success: true, message: 'Si el correo existe, recibirás instrucciones.' });
+    res.json({ success: true, message: 'Si el email existe, recibirás instrucciones.' });
   } catch (err) {
+    console.error(err);
     res.json({ success: false, message: 'Error.' });
   }
 });
@@ -116,16 +108,38 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { token, password } = req.body;
     const [rows] = await db.query(
-      'SELECT * FROM reset_tokens WHERE token = $1 AND expira_en > NOW()', [token]
+      'SELECT * FROM reset_tokens WHERE token = $1 AND expira_en > NOW()',
+      [token]
     );
     if (!rows.length) return res.json({ success: false, message: 'Token inválido o expirado.' });
-
     const hash = await bcrypt.hash(password, 10);
     await db.query('UPDATE usuarios SET password = $1 WHERE id = $2', [hash, rows[0].usuario_id]);
     await db.query('DELETE FROM reset_tokens WHERE token = $1', [token]);
-    res.json({ success: true, message: 'Contraseña actualizada correctamente.' });
+    res.json({ success: true, message: 'Contraseña actualizada.' });
   } catch (err) {
     res.json({ success: false, message: 'Error.' });
+  }
+});
+
+// DELETE /api/auth/usuarios/:id — admin borra usuario  [NUEVO #1]
+router.delete('/usuarios/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // No permitir borrar el propio admin logueado
+    const admin = req.usuario || req.session?.usuario;
+    if (String(id) === String(admin.id)) {
+      return res.json({ success: false, message: 'No puedes eliminar tu propia cuenta.' });
+    }
+    // Borrar en cascada: reset_tokens, pagos, compras, pqrs, luego usuario
+    await db.query('DELETE FROM reset_tokens WHERE usuario_id = $1', [id]);
+    await db.query(`DELETE FROM pagos WHERE compra_id IN (SELECT id FROM compras WHERE usuario_id = $1)`, [id]);
+    await db.query('DELETE FROM compras WHERE usuario_id = $1', [id]);
+    await db.query('DELETE FROM pqrs WHERE usuario_id = $1', [id]);
+    await db.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Usuario eliminado.' });
+  } catch (err) {
+    console.error('Error borrar usuario:', err);
+    res.json({ success: false, message: 'Error al eliminar usuario.' });
   }
 });
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"><meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Proyectos — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
@@ -47,11 +47,49 @@
   const d = await api('/api/proyecto');
   if(!d.success){document.getElementById('proyectosContainer').innerHTML='<p style="color:var(--sub);">Error cargando proyectos</p>';return;}
 
+  // Cargar lotes del cliente para mostrar su estado (#5)
+  const misLotesData = await api('/api/lotes/cliente/mis-lotes');
+  const misLotes = misLotesData.success ? (misLotesData.lotes || []) : [];
+
   const icons={completada:'✅',activa:'🔵',pendiente:'⏳'};
   const colors={completada:'var(--green)',activa:'var(--blue)',pendiente:'var(--sub)'};
 
   const cont=document.getElementById('proyectosContainer');
   if(!d.proyectos.length){cont.innerHTML='<div class="card" style="text-align:center;padding:40px;"><p style="color:var(--sub);">No hay proyectos registrados.</p></div>';return;}
+
+  // Helper: banner de estado del cliente para este proyecto
+  function bannerEstadoCliente(proyectoId) {
+    const lotesEnProyecto = misLotes.filter(l => l.proyecto_id === proyectoId);
+    if (!lotesEnProyecto.length) return '';
+    return lotesEnProyecto.map(l => {
+      let icono = '📋', color = 'var(--blue)', msg = '';
+      const pagado = Number(l.pagado || 0);
+      const total  = Number(l.precio_total || 0);
+      const saldo  = Number(l.saldo || 0);
+      const pct    = total > 0 ? Math.round((pagado / total) * 100) : 0;
+      if (l.lote_estado === 'vendido' && pagado >= total) {
+        icono = '🏆'; color = 'var(--green)';
+        msg = `Lote <strong>${l.codigo}</strong> — <span style="color:var(--green);">✅ Pago completado</span>`;
+      } else if (pagado > 0) {
+        icono = '💳'; color = 'var(--orange)';
+        msg = `Lote <strong>${l.codigo}</strong> — <span style="color:var(--orange);">En pago</span>: ${pct}% pagado (${formatCOP(pagado)} de ${formatCOP(total)})`;
+      } else {
+        icono = '📝'; color = 'var(--blue)';
+        msg = `Lote <strong>${l.codigo}</strong> — <span style="color:var(--blue);">Lote asignado</span>. Pendiente de primer pago.`;
+      }
+      return `<div style="background:linear-gradient(135deg,${color}15,${color}08);border:1.5px solid ${color}40;border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:22px;">${icono}</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:2px;">Tu estado en este proyecto</div>
+          <div style="font-size:13px;">${msg}</div>
+          ${total > 0 && pagado < total ? `
+          <div style="margin-top:8px;background:var(--border);border-radius:100px;height:6px;width:200px;max-width:100%;">
+            <div style="background:${color};height:6px;border-radius:100px;width:${pct}%;transition:width .5s;"></div>
+          </div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   cont.innerHTML=d.proyectos.map(p=>{
     let galeria=[];
@@ -80,6 +118,9 @@
           </div>
         </div>
         ${p.descripcion?`<p style="color:var(--sub);margin-bottom:24px;line-height:1.7;">${p.descripcion}</p>`:''}
+
+        <!-- Estado del cliente en este proyecto (#5) -->
+        ${bannerEstadoCliente(p.id)}
 
         ${etapasProy.length?`
         <h3 style="margin-bottom:16px;font-size:1.1rem;">Etapas del Proyecto</h3>

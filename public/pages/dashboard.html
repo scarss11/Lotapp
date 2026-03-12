@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"><meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
@@ -132,20 +132,21 @@ async function loadMisLotes(){
   }
   let tp=0,ts=0;
   document.getElementById('misLotesContainer').innerHTML=d.lotes.map(l=>{
-    const pct=Math.min(100,Math.round((l.pagado/l.precio_total)*100));
-    tp+=Number(l.pagado); ts+=Number(l.saldo);
+    const pagado=parseFloat(l.pagado)||0,saldo=parseFloat(l.saldo)||0,total=parseFloat(l.precio_total)||0;
+    const pct=total>0?Math.min(100,Math.round((pagado/total)*100)):0;
+    tp+=pagado; ts+=saldo;
     return `<div style="border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
         <div><strong>Lote ${l.codigo}</strong> — <span style="color:var(--sub);font-size:13px;">${l.proyecto_nombre||''} ${l.proyecto_inmobiliaria?'· '+l.proyecto_inmobiliaria:''}</span></div>
-        ${estadoBadge('vendido')}
+        ${estadoBadge(l.lote_estado||'vendido')}
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--sub);margin-bottom:12px;">
         <span>📐 ${l.area_m2} m²</span><span>📍 ${l.ubicacion||'—'}</span>
-        <span>💰 Total: ${formatCOP(l.precio_total)}</span>
+        <span>💰 Total: ${formatCOP(total)}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
-        <span>Pagado: <strong style="color:var(--green);">${formatCOP(l.pagado)}</strong></span>
-        <span>Saldo: <strong style="color:var(--orange);">${formatCOP(l.saldo)}</strong></span>
+        <span>Pagado: <strong style="color:var(--green);">${formatCOP(pagado)}</strong></span>
+        <span>Saldo: <strong style="color:${saldo>0?'var(--orange)':'var(--green)'}">${formatCOP(saldo)}</strong></span>
         <span>${pct}%</span>
       </div>
       <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>

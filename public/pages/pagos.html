@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pagos — LotesApp</title>
 <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -73,9 +73,40 @@
   </div>
 </div>
 
+<!-- Modal Ver Comprobante (#2) -->
+<div class="modal-overlay" id="modalVerComprobante">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header"><h3>Comprobante de Pago</h3><button class="modal-close" onclick="closeModal('modalVerComprobante')">×</button></div>
+    <div id="verComprobanteInfo" style="margin-bottom:12px;font-size:14px;color:var(--sub);"></div>
+    <div id="verComprobanteImgWrap" style="text-align:center;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalVerComprobante')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container"></div>
 <script src="../js/app.js"></script>
 <script>
+function verComprobante(url, lote, monto) {
+  document.getElementById('verComprobanteInfo').innerHTML = `<b>Lote:</b> ${lote} &nbsp;·&nbsp; <b>Monto:</b> ${monto}`;
+  const wrap = document.getElementById('verComprobanteImgWrap');
+  if (url) {
+    const esImagen = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
+    if (esImagen) {
+      wrap.innerHTML = `<img src="${url}" style="width:100%;max-height:400px;object-fit:contain;border-radius:10px;" alt="Comprobante"><br><a href="${url}" target="_blank" class="btn btn-secondary" style="margin-top:8px;">🔗 Abrir en pestaña</a>`;
+    } else {
+      wrap.innerHTML = `<div style="padding:24px;background:var(--bg);border-radius:10px;text-align:center;">
+        <p style="font-weight:600;margin-bottom:12px;">📎 Archivo adjunto</p>
+        <a href="${url}" target="_blank" class="btn btn-primary">Abrir comprobante</a>
+      </div>`;
+    }
+  } else {
+    wrap.innerHTML = `<p style="text-align:center;color:var(--sub);padding:32px;">Sin comprobante adjunto</p>`;
+  }
+  openModal('modalVerComprobante');
+}
+
 (async()=>{
   const u=await checkSession();
   if(!u) return;
@@ -118,7 +149,7 @@ async function loadPagos(){
     <td style="font-size:13px;">${p.tipo_pago}</td>
     <td>${estadoBadge(p.estado)}</td>
     <td style="font-size:13px;">${formatDate(p.fecha_pago)}</td>
-    <td>${p.comprobante_url?`<a href="${p.comprobante_url}" target="_blank" class="btn btn-sm btn-secondary">Ver</a>`:'—'}</td>
+    <td>${p.comprobante_url?`<button class="btn btn-sm btn-secondary" onclick="verComprobante('${p.comprobante_url}','${p.lote_codigo}','${formatCOP(p.monto)}')">👁 Ver</button>`:'—'}</td>
   </tr>`).join('');
 }
 

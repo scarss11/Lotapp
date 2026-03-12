@@ -25,22 +25,30 @@ async function checkSession(requiredRole = null) {
   }
 }
 
-// ─── Bloquear botón "atrás" en páginas protegidas ────────
+// ─── Bloquear botón "atrás" en páginas protegidas (#9) ───
 (function bloquearAtras() {
   const paginasProtegidas = ['/dashboard', '/admin', '/lotes', '/pagos', '/pqrs', '/proyecto'];
   const esProtegida = paginasProtegidas.some(p => window.location.pathname.startsWith(p));
   if (!esProtegida) return;
 
-  // Añadir entrada en el historial para capturar el evento "atrás"
+  // Verificar sesión INMEDIATAMENTE al cargar (por si viene del caché del navegador)
+  fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.loggedIn) {
+        window.location.replace('/login');
+      }
+    })
+    .catch(() => window.location.replace('/login'));
+
+  // Registrar posición en historial para capturar "atrás"
   history.pushState(null, '', window.location.href);
   window.addEventListener('popstate', async () => {
-    // Al intentar retroceder, verificar sesión
-    const res  = await fetch('/api/me', { credentials: 'same-origin' }).catch(() => null);
+    const res  = await fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }).catch(() => null);
     const data = res ? await res.json().catch(() => ({})) : {};
     if (!data.loggedIn) {
       window.location.replace('/login');
     } else {
-      // Sesión activa: volver a pushear para seguir bloqueando
       history.pushState(null, '', window.location.href);
     }
   });
